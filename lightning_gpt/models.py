@@ -12,19 +12,19 @@ if _DEEPSPEED_AVAILABLE:
 
 class GPT(L.LightningModule):
     def __init__(self,
-        vocab_size,
-        block_size,
-        model_type = "gpt2",
-        n_layer = None,
-        n_head = None,
-        n_embd = None,
-        embd_pdrop = 0.1,
-        resid_pdrop = 0.1,
-        attn_pdrop = 0.1,
-        weight_decay = 0.1,
-        learning_rate = 3e-4,
-        betas = (0.9, 0.95)
-    ):
+                 vocab_size,
+                 block_size,
+                 model_type="gpt2",
+                 n_layer=None,
+                 n_head=None,
+                 n_embd=None,
+                 embd_pdrop=0.1,
+                 resid_pdrop=0.1,
+                 attn_pdrop=0.1,
+                 weight_decay=0.1,
+                 learning_rate=3e-4,
+                 betas=(0.9, 0.95)
+                 ):
         super().__init__()
         self.save_hyperparameters()
 
@@ -95,4 +95,3 @@ class DeepSpeedGPT(GPT):
             return FusedAdam(optim_groups, lr=self.hparams.learning_rate, betas=self.hparams.betas)
 
         return optimizer
-

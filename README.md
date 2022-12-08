@@ -6,8 +6,8 @@ It is aimed at providing a minimal Lightning layer on top of minGPT, while lever
 
 There are currently two options:
 
-* GPT: the GPT model from minGPT vanilla
-* DeepSpeedGPT: the GPT model from minGPT made DeepSpeed-ready
+- GPT: the GPT model from minGPT vanilla
+- DeepSpeedGPT: the GPT model from minGPT made DeepSpeed-ready
 
 minGPT is vendored with the repo in the `mingpt` directory. Find the LICENSE for minGPT there.
 

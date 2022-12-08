@@ -1,5 +1,6 @@
-"""
-bpe is short for Byte Pair Encoder. It translates arbitrary utf-8 strings into
+"""bpe is short for Byte Pair Encoder.
+
+It translates arbitrary utf-8 strings into
 sequences of integers, where each integer represents small chunks of commonly
 occuring characters. This implementation is based on openai's gpt2 encoder.py:
 https://github.com/openai/gpt-2/blob/master/src/encoder.py
@@ -18,19 +19,16 @@ import torch
 # -----------------------------------------------------------------------------
 
 def bytes_to_unicode():
-    """
-    Every possible byte (really an integer 0..255) gets mapped by OpenAI to a unicode
-    character that represents it visually. Some bytes have their appearance preserved
-    because they don't cause any trouble. These are defined in list bs. For example:
-    chr(33) returns "!", so in the returned dictionary we simply have d[33] -> "!".
-    However, chr(0), for example, is '\x00', which looks ugly. So OpenAI maps these
-    bytes, into new characters in a range where chr() returns a single nice character.
-    So in the final dictionary we have d[0] -> 'Ā' instead, which is just chr(0 + 2**8).
-    In particular, the space character is 32, which we can see by ord(' '). Instead,
-    this function will shift space (32) by 256 to 288, so d[32] -> 'Ġ'.
-    So this is just a simple one-to-one mapping of bytes 0..255 into unicode characters
-    that "look nice", either in their original form, or a funny shifted character
-    like 'Ā', or 'Ġ', etc.
+    """Every possible byte (really an integer 0..255) gets mapped by OpenAI to a unicode character that represents it
+    visually.
+
+    Some bytes have their appearance preserved because they don't cause any trouble. These are defined in list bs. For
+    example: chr(33) returns "!", so in the returned dictionary we simply have d[33] -> "!". However, chr(0), for
+    example, is '\x00', which looks ugly. So OpenAI maps these bytes, into new characters in a range where chr() returns
+    a single nice character. So in the final dictionary we have d[0] -> 'Ā' instead, which is just chr(0 + 2**8). In
+    particular, the space character is 32, which we can see by ord(' '). Instead, this function will shift space (32) by
+    256 to 288, so d[32] -> 'Ġ'. So this is just a simple one-to-one mapping of bytes 0..255 into unicode characters
+    that "look nice", either in their original form, or a funny shifted character like 'Ā', or 'Ġ', etc.
     """
     # the 188 integers that render fine in their original form and need no shifting
     bs = list(range(ord("!"), ord("~")+1))+list(range(ord("¡"), ord("¬")+1))+list(range(ord("®"), ord("ÿ")+1))
@@ -49,9 +47,7 @@ def bytes_to_unicode():
     return d
 
 def get_pairs(word):
-    """
-    Return all bigrams as a set of tuples, of consecutive elements in the iterable word.
-    """
+    """Return all bigrams as a set of tuples, of consecutive elements in the iterable word."""
     pairs = set()
     prev_char = word[0]
     for char in word[1:]:
@@ -77,14 +73,14 @@ class Encoder:
         python re reference: https://docs.python.org/3/library/re.html
         - the vertical bars | is OR, so re.findall will chunkate text as the pieces match, from left to right
         - '\'s' would split up things like Andrej's -> (Andrej, 's)
-        - ' ?\p{L}': optional space followed by 1+ unicode code points in the category "letter"
-        - ' ?\p{N}': optional space followed by 1+ unicode code points in the category "number"
-        - ' ?[^\s\p{L}\p{N}]+': optional space, then 1+ things that are NOT a whitespace, letter or number
-        - '\s+(?!\S)': 1+ whitespace characters (e.g. space or tab or etc) UNLESS they are followed by non-whitespace
+        - ' ?\\p{L}': optional space followed by 1+ unicode code points in the category "letter"
+        - ' ?\\p{N}': optional space followed by 1+ unicode code points in the category "number"
+        - ' ?[^\\s\\p{L}\\p{N}]+': optional space, then 1+ things that are NOT a whitespace, letter or number
+        - '\\s+(?!\\S)': 1+ whitespace characters (e.g. space or tab or etc) UNLESS they are followed by non-whitespace
                        so this will consume whitespace characters in a sequence but exclude the last whitespace in
                        that sequence. that last whitespace has the opportunity to then match the optional ' ?' in
                        earlier patterns.
-        - '\s+': 1+ whitespace characters, intended probably to catch a full trailing sequence of whitespaces at end of string
+        - '\\s+': 1+ whitespace characters, intended probably to catch a full trailing sequence of whitespaces at end of string
         So TLDR:
         - we are special casing a few common apostrophe constructs ('s, 't, 're, ...) and making those into separate tokens
         - we then separate out strings into consecutive chunks of 1) letters, 2) numbers, 3) non-letter-numbers, 4) whitespaces
@@ -93,10 +89,9 @@ class Encoder:
         self.cache = {}
 
     def bpe(self, token):
-        """
-        this function uses self.bpe_ranks to iteratively merge all the possible bpe tokens
-        up the tree. token is a string of one individual 'word' (after regex tokenization)
-        and after byte encoding, e.g. 'Ġthere'.
+        """this function uses self.bpe_ranks to iteratively merge all the possible bpe tokens up the tree.
+
+        token is a string of one individual 'word' (after regex tokenization) and after byte encoding, e.g. 'Ġthere'.
         """
         # token is a string of one individual 'word', after byte encoding, e.g. 'Ġthere'
 
@@ -159,7 +154,7 @@ class Encoder:
         return word
 
     def encode(self, text):
-        """ string goes in, list of integers comes out """
+        """string goes in, list of integers comes out."""
         bpe_idx = []
         # pre-tokenize the input text into string tokens (words, roughly speaking)
         tokens = re.findall(self.pat, text)
@@ -178,7 +173,7 @@ class Encoder:
         return bpe_idx
 
     def encode_and_show_work(self, text):
-        """ debugging function, same as encode but returns all intermediate work """
+        """debugging function, same as encode but returns all intermediate work."""
         bpe_idx = []
         parts = []
         tokens = re.findall(self.pat, text)
@@ -203,28 +198,25 @@ class Encoder:
         return out
 
     def decode(self, bpe_idx):
-        """ list of integers comes in, string comes out """
+        """list of integers comes in, string comes out."""
         # inverse map the integers to get the tokens
         tokens_merged = [self.decoder[token] for token in bpe_idx]
         # inverse the byte encoder, e.g. recovering 'Ġ' -> ' ', and get the bytes
         tokens_flat = ''.join(tokens_merged)
-        tokens_bytes = bytearray([self.byte_decoder[c] for c in tokens_flat])
+        tokens_bytes = bytearray(self.byte_decoder[c] for c in tokens_flat)
         # recover the full utf-8 string
         text = tokens_bytes.decode('utf-8', errors='replace')
         return text
 
 def get_file(local_file, remote_file):
-    """ downloads remote_file to local_file if necessary """
+    """downloads remote_file to local_file if necessary."""
     if not os.path.isfile(local_file):
         print(f"downloading {remote_file} to {local_file}")
         response = requests.get(remote_file)
         open(local_file, "wb").write(response.content)
 
 def get_encoder():
-    """
-    Returns an instance of the GPT BPE Encoder/Decoder
-    and handles caching of "database" files.
-    """
+    """Returns an instance of the GPT BPE Encoder/Decoder and handles caching of "database" files."""
     home_dir = os.path.expanduser('~')
     cache_dir = os.path.join(home_dir, '.cache', 'mingpt')
     os.makedirs(cache_dir, exist_ok=True)
@@ -233,7 +225,7 @@ def get_encoder():
     encoder_local_file = os.path.join(cache_dir, 'encoder.json')
     encoder_remote_file = 'https://openaipublic.blob.core.windows.net/gpt-2/models/124M/encoder.json'
     get_file(encoder_local_file, encoder_remote_file)
-    with open(encoder_local_file, 'r') as f:
+    with open(encoder_local_file) as f:
         encoder = json.load(f)
     assert len(encoder) == 50257 # 256 individual byte tokens, 50,000 merged tokens, and 1 special <|endoftext|> token
 
@@ -242,7 +234,7 @@ def get_encoder():
     vocab_local_file = os.path.join(cache_dir, 'vocab.bpe')
     vocab_remote_file = 'https://openaipublic.blob.core.windows.net/gpt-2/models/124M/vocab.bpe'
     get_file(vocab_local_file, vocab_remote_file)
-    with open(vocab_local_file, 'r', encoding="utf-8") as f:
+    with open(vocab_local_file, encoding="utf-8") as f:
         bpe_data = f.read()
     # light postprocessing: strip the version on first line and the last line is a blank
     bpe_merges = [tuple(merge_str.split()) for merge_str in bpe_data.split('\n')[1:-1]]
@@ -255,7 +247,7 @@ def get_encoder():
 # -----------------------------------------------------------------------------
 
 class BPETokenizer:
-    """ PyTorch-aware class that wraps the Encoder above """
+    """PyTorch-aware class that wraps the Encoder above."""
 
     def __init__(self):
         self.encoder = get_encoder()

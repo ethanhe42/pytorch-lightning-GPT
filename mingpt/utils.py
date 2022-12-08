@@ -1,4 +1,3 @@
-
 import os
 import sys
 import json
@@ -17,7 +16,7 @@ def set_seed(seed):
     torch.cuda.manual_seed_all(seed)
 
 def setup_logging(config):
-    """ monotonous bookkeeping """
+    """monotonous bookkeeping."""
     work_dir = config.system.work_dir
     # create the work directory if it doesn't already exist
     os.makedirs(work_dir, exist_ok=True)
@@ -29,7 +28,7 @@ def setup_logging(config):
         f.write(json.dumps(config.to_dict(), indent=4))
 
 class CfgNode:
-    """ a lightweight configuration class inspired by yacs """
+    """a lightweight configuration class inspired by yacs."""
     # TODO: convert to subclass from a dict like in yacs?
     # TODO: implement freezing to prevent shooting of own foot
     # TODO: additional existence/override checks when reading/writing params?
@@ -41,28 +40,27 @@ class CfgNode:
         return self._str_helper(0)
 
     def _str_helper(self, indent):
-        """ need to have a helper to support nested indentation for pretty printing """
+        """need to have a helper to support nested indentation for pretty printing."""
         parts = []
         for k, v in self.__dict__.items():
             if isinstance(v, CfgNode):
                 parts.append("%s:\n" % k)
                 parts.append(v._str_helper(indent + 1))
             else:
-                parts.append("%s: %s\n" % (k, v))
+                parts.append(f"{k}: {v}\n")
         parts = [' ' * (indent * 4) + p for p in parts]
         return "".join(parts)
 
     def to_dict(self):
-        """ return a dict representation of the config """
+        """return a dict representation of the config."""
         return { k: v.to_dict() if isinstance(v, CfgNode) else v for k, v in self.__dict__.items() }
 
     def merge_from_dict(self, d):
         self.__dict__.update(d)
 
     def merge_from_args(self, args):
-        """
-        update the configuration from a list of strings that is expected
-        to come from the command line, i.e. sys.argv[1:].
+        """update the configuration from a list of strings that is expected to come from the command line, i.e.
+        sys.argv[1:].
 
         The arguments are expected to be in the form of `--arg=value`, and
         the arg can use . to denote nested sub-attributes. Example:
@@ -99,5 +97,5 @@ class CfgNode:
             assert hasattr(obj, leaf_key), f"{key} is not an attribute that exists in the config"
 
             # overwrite the attribute
-            print("command line overwriting config attribute %s with %s" % (key, val))
+            print(f"command line overwriting config attribute {key} with {val}")
             setattr(obj, leaf_key, val)

@@ -1,5 +1,4 @@
-"""
-Full definition of a GPT Language Model, all of it in this single file.
+"""Full definition of a GPT Language Model, all of it in this single file.
 
 References:
 1) the official GPT-2 TensorFlow implementation released by OpenAI:
@@ -19,18 +18,18 @@ from mingpt.utils import CfgNode as CN
 # -----------------------------------------------------------------------------
 
 class NewGELU(nn.Module):
-    """
-    Implementation of the GELU activation function currently in Google BERT repo (identical to OpenAI GPT).
+    """Implementation of the GELU activation function currently in Google BERT repo (identical to OpenAI GPT).
+
     Reference: Gaussian Error Linear Units (GELU) paper: https://arxiv.org/abs/1606.08415
     """
     def forward(self, x):
         return 0.5 * x * (1.0 + torch.tanh(math.sqrt(2.0 / math.pi) * (x + 0.044715 * torch.pow(x, 3.0))))
 
 class CausalSelfAttention(nn.Module):
-    """
-    A vanilla multi-head masked self-attention layer with a projection at the end.
-    It is possible to use torch.nn.MultiheadAttention here but I am including an
-    explicit implementation here to show that there is nothing too scary here.
+    """A vanilla multi-head masked self-attention layer with a projection at the end.
+
+    It is possible to use torch.nn.MultiheadAttention here but I am including an explicit implementation here to show
+    that there is nothing too scary here.
     """
 
     def __init__(self, config):
@@ -71,7 +70,7 @@ class CausalSelfAttention(nn.Module):
         return y
 
 class Block(nn.Module):
-    """ an unassuming Transformer block """
+    """an unassuming Transformer block."""
 
     def __init__(self, config):
         super().__init__()
@@ -93,7 +92,7 @@ class Block(nn.Module):
         return x
 
 class GPT(nn.Module):
-    """ GPT Language Model """
+    """GPT Language Model."""
 
     @staticmethod
     def get_default_config():
@@ -158,7 +157,7 @@ class GPT(nn.Module):
 
         # report number of parameters (note we don't count the decoder parameters in lm_head)
         n_params = sum(p.numel() for p in self.transformer.parameters())
-        print("number of parameters: %.2fM" % (n_params/1e6,))
+        print(f"number of parameters: {n_params/1e6:.2f}M")
 
     def _init_weights(self, module):
         if isinstance(module, nn.Linear):
@@ -173,10 +172,7 @@ class GPT(nn.Module):
 
     @classmethod
     def from_pretrained(cls, model_type):
-        """
-        Initialize a pretrained GPT model by copying over the weights
-        from a huggingface/transformers checkpoint.
-        """
+        """Initialize a pretrained GPT model by copying over the weights from a huggingface/transformers checkpoint."""
         assert model_type in {'gpt2', 'gpt2-medium', 'gpt2-large', 'gpt2-xl'}
         from transformers import GPT2LMHeadModel
 
@@ -213,11 +209,11 @@ class GPT(nn.Module):
         return model
 
     def configure_optimizers(self, train_config):
-        """
-        This long function is unfortunately doing something very simple and is being very defensive:
-        We are separating out all parameters of the model into two buckets: those that will experience
-        weight decay for regularization and those that won't (biases, and layernorm/embedding weights).
-        We are then returning the PyTorch optimizer object.
+        """This long function is unfortunately doing something very simple and is being very defensive:
+
+        We are separating out all parameters of the model into two buckets: those that will experience weight decay for
+        regularization and those that won't (biases, and layernorm/embedding weights). We are then returning the PyTorch
+        optimizer object.
         """
 
         # separate out all parameters to those that will and won't experience regularizing weight decay
@@ -227,7 +223,7 @@ class GPT(nn.Module):
         blacklist_weight_modules = (torch.nn.LayerNorm, torch.nn.Embedding)
         for mn, m in self.named_modules():
             for pn, p in m.named_parameters():
-                fpn = '%s.%s' % (mn, pn) if mn else pn # full param name
+                fpn = f'{mn}.{pn}' if mn else pn # full param name
                 # random note: because named_modules and named_parameters are recursive
                 # we will see the same tensors p many many times. but doing it this way
                 # allows us to know which parent module any tensor p belongs to...
@@ -245,7 +241,7 @@ class GPT(nn.Module):
         param_dict = {pn: p for pn, p in self.named_parameters()}
         inter_params = decay & no_decay
         union_params = decay | no_decay
-        assert len(inter_params) == 0, "parameters %s made it into both decay/no_decay sets!" % (str(inter_params), )
+        assert len(inter_params) == 0, f"parameters {str(inter_params)} made it into both decay/no_decay sets!"
         assert len(param_dict.keys() - union_params) == 0, "parameters %s were not separated into either decay/no_decay set!" \
                                                     % (str(param_dict.keys() - union_params), )
 
@@ -281,9 +277,9 @@ class GPT(nn.Module):
 
     @torch.no_grad()
     def generate(self, idx, max_new_tokens, temperature=1.0, do_sample=False, top_k=None):
-        """
-        Take a conditioning sequence of indices idx (LongTensor of shape (b,t)) and complete
-        the sequence max_new_tokens times, feeding the predictions back into the model each time.
+        """Take a conditioning sequence of indices idx (LongTensor of shape (b,t)) and complete the sequence
+        max_new_tokens times, feeding the predictions back into the model each time.
+
         Most likely you'll want to make sure to be in model.eval() mode of operation for this.
         """
         for _ in range(max_new_tokens):
