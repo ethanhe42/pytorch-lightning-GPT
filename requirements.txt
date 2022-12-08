@@ -1,4 +1,3 @@
 lightning>=1.8.0
 torch>=1.10.0
 numpy
-psutil
