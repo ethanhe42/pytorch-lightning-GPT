@@ -19,8 +19,10 @@ def main(args):
 
     train_loader = DataLoader(train_dataset, batch_size=args.batch_size, num_workers=args.num_workers)
 
+    GPT_class = models.GPT if not args.deepspeed else models.DeepSpeedGPT
+
     with init_meta_context():
-        model = models.GPT(
+        model = GPT_class(
             vocab_size=train_dataset.vocab_size,
             block_size=train_dataset.block_size,
             model_type = args.model_type,
@@ -79,6 +81,7 @@ if __name__ == "__main__":
     parser.add_argument('--batch_size', default=64, type=int)
     parser.add_argument('--num_workers', default=4, type=int)
     parser.add_argument('--compile', default=0, type=int)
+    parser.add_argument('--deepspeed', default=0, type=int)
     args = parser.parse_args()
 
     main(args)

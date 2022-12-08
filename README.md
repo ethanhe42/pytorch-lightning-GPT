@@ -2,7 +2,7 @@
 
 lightning-gpt is an implementation of Andrej Karpathy's minGPT in Lightning.
 
-It is aimed at providing a minimal Lightning layer on top of minGPT, while allowing to fully leverage Lightning functionality.
+It is aimed at providing a minimal Lightning layer on top of minGPT, while leveraging the full breadth of Lightning.
 
 There are currently two options:
 
@@ -15,19 +15,19 @@ Thanks to @karpathy for the original minGPT implementation and @SeanNaren for th
 
 To run the example, first install the dependencies
 
-```
+```shell
 pip install -r requirements.txt
 ```
 
 then
 
-```
+```shell
 python train.py
 ```
 
 See
 
-```
+```shell
 python train.py --help
 ```
 
@@ -35,8 +35,14 @@ for the available flags.
 
 For DeepSpeed, install the extra-dependencies:
 
-```
+```shell
 pip install -r requirements-deepspeed.txt
+```
+
+and pass the `deepspeed` flag to the script
+
+```shell
+python train.py --deepspeed 1
 ```
 
 ## License
