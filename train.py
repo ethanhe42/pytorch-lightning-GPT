@@ -19,7 +19,12 @@ def main(args):
 
     train_loader = DataLoader(train_dataset, batch_size=args.batch_size, num_workers=args.num_workers)
 
-    GPT_class = models.GPT if not args.deepspeed else models.DeepSpeedGPT
+    GPT_class = models.GPT
+
+    extra_kwargs = {}
+    if args.deepspeed:
+        GPT_class = models.DeepSpeedGPT
+        extra_kwargs["deepspeed_offload"] = args.deepspeed_offload
 
     with init_meta_context():
         model = GPT_class(
@@ -34,7 +39,8 @@ def main(args):
             attn_pdrop=0.1,
             weight_decay=0.1,
             learning_rate=args.learning_rate,
-            betas=(0.9, 0.95)
+            betas=(0.9, 0.95),
+            **extra_kwargs
         )
 
     if args.compile:
@@ -82,6 +88,7 @@ if __name__ == "__main__":
     parser.add_argument('--num_workers', default=4, type=int)
     parser.add_argument('--compile', default=0, type=int)
     parser.add_argument('--deepspeed', default=0, type=int)
+    parser.add_argument('--deepspeed-offload', default=0, type=int)
     args = parser.parse_args()
 
     main(args)

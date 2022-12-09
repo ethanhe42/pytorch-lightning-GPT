@@ -68,30 +68,15 @@ class GPT(L.LightningModule):
 
 class DeepSpeedGPT(GPT):
     # TODO: activation checkpointing (requires overriding forward)
-
-    def is_strategy_deepspeed(self):
-        strategy = self.trainer.strategy
-        return isinstance(strategy, DeepSpeedStrategy)
-
-    def is_strategy_deepspeed_offload(self):
-        strategy = self.trainer.strategy
-        if isinstance(strategy, DeepSpeedStrategy):
-            config = strategy.config['zero_optimization']
-            return config.get('offload_optimizer') or config.get('offload_param')
-        return False
-
-    def setup(self):
-        self.use_deepspeed = self.is_strategy_deepspeed()
-        self.use_deepspeed_offload = self.is_strategy_deepspeed_offload()
+    def __init__(self, offload=False, **kwargs):
+        super().__init__(**kwargs)
+        self.offload = offload
 
     def configure_optimizers(self):
         optimizer = super().configure_optimizers()
         optim_groups = optimizer.param_groups
 
-        if self.use_deepspeed_offload:
+        if self.offload:
             return DeepSpeedCPUAdam(optim_groups, lr=self.hparams.learning_rate, betas=self.hparams.betas)
 
-        if self.use_deepspeed:
-            return FusedAdam(optim_groups, lr=self.hparams.learning_rate, betas=self.hparams.betas)
-
-        return optimizer
+        return FusedAdam(optim_groups, lr=self.hparams.learning_rate, betas=self.hparams.betas)
