@@ -16,36 +16,48 @@ if _DEEPSPEED_AVAILABLE:
 _XFORMERS_AVAILABLE = True
 try:
     import xformers
+
     _XFORMERS_AVAILABLE = True
 except ImportError:
     pass
 
 
 class GPT(L.LightningModule):
-    def __init__(self,
-                 vocab_size,
-                 block_size,
-                 model_type="gpt2",
-                 n_layer=None,
-                 n_head=None,
-                 n_embd=None,
-                 embd_pdrop=0.1,
-                 resid_pdrop=0.1,
-                 attn_pdrop=0.1,
-                 weight_decay=0.1,
-                 learning_rate=3e-4,
-                 betas=(0.9, 0.95)
-                 ):
+    def __init__(
+        self,
+        vocab_size,
+        block_size,
+        model_type="gpt2",
+        n_layer=None,
+        n_head=None,
+        n_embd=None,
+        embd_pdrop=0.1,
+        resid_pdrop=0.1,
+        attn_pdrop=0.1,
+        weight_decay=0.1,
+        learning_rate=3e-4,
+        betas=(0.9, 0.95),
+    ):
         super().__init__()
         self.save_hyperparameters()
+        self.build_mingpt_configs()
+        self.mingpt = mingpt.model.GPT(self.config)
 
-        params_given = all([n_layer is not None, n_head is not None, n_embd is not None])
-        some_params_given = any([n_layer is not None, n_head is not None, n_embd is not None])
+    def build_mingpt_configs(self):
+        params = [
+            self.hparams.n_layer,
+            self.hparams.n_head,
+            self.hparams.n_embd,
+        ]
+
+        params_given = all([el is not None for el in params])
+        some_params_given = any([el is not None for el in params])
 
         if some_params_given and not params_given:
             raise ValueError(
                 "Please provide all values for n_layer, n_head, and n_embd, or just model_type."
-                f"Got n_layer={n_layer}, n_head={n_head}, and n_embd={n_embd}."
+                f"Got n_layer={self.hparams.n_layer}, n_head={self.hparams.n_head}, "
+                f"and n_embd={self.hparams.n_embd}."
             )
 
         if params_given:
@@ -56,8 +68,6 @@ class GPT(L.LightningModule):
 
         self.optimizer_config = mingpt.trainer.Trainer.get_default_config()
         self.merge_with_hparams(self.optimizer_config)
-
-        self.mingpt = mingpt.model.GPT(self.config)
 
     def merge_with_hparams(self, config):
         keys = set(config.to_dict().keys())
@@ -70,7 +80,7 @@ class GPT(L.LightningModule):
     def training_step(self, batch, batch_idx):
         idx, targets = batch
         _, loss = self.mingpt(idx, targets)
-        self.log('train_loss', loss)
+        self.log("train_loss", loss)
         return loss
 
     def generate(self, idx, max_new_tokens, temperature=1.0, do_sample=False, top_k=None):
@@ -79,9 +89,7 @@ class GPT(L.LightningModule):
 
 class DeepSpeedGPT(GPT):
     # TODO: activation checkpointing (requires overriding forward)
-    def __init__(self,
-                 offload=False,
-                 **kwargs):
+    def __init__(self, offload=False, **kwargs):
         super().__init__(**kwargs)
         self.save_hyperparameters()
 
@@ -95,46 +103,44 @@ class DeepSpeedGPT(GPT):
         return FusedAdam(optim_groups, lr=self.hparams.learning_rate, betas=self.hparams.betas)
 
 
-class XFormersGPT(GPT):
-    def __init__(self,
-                 attention="scaled_dot_product",
-                 mlp_pdrop=0.1,
-                 hidden_layer_multiplier=4,
-                 **kwargs
-                 ):
-        super().__init__(**kwargs)
-        self.save_hyperparameters()
-
+class _XFormersMinGPT(mingpt.model.GPT):
+    def __init__(
+        self,
+        config,
+        attention="scaled_dot_product",
+        mlp_pdrop=0.1,
+        hidden_layer_multiplier=4,
+    ):
         # A list of the encoder or decoder blocks which constitute the Transformer.
         xformer_config = [
             {
                 "reversible": False,  # Turn on to test the effect of using reversible layers
                 "block_type": "encoder",
-                "num_layers": self.hparams.n_layer,
-                "dim_model": self.hparams.n_embd,
+                "num_layers": config.n_layer,
+                "dim_model": config.n_embd,
                 "residual_norm_style": "post",
                 "position_encoding_config": {
                     "name": "vocab",
-                    "seq_len": self.hparams.block_size,
-                    "vocab_size": self.hparams.vocab_size,
+                    "seq_len": config.block_size,
+                    "vocab_size": config.vocab_size,
                 },
                 "multi_head_config": {
-                    "num_heads": self.hparams.n_head,
-                    "residual_dropout": self.hparams.resid_pdrop,
+                    "num_heads": config.n_head,
+                    "residual_dropout": config.resid_pdrop,
                     "use_rotary_embeddings": True,
                     "attention": {
-                        "name": self.hparams.attention,
-                        "dropout": self.hparams.attn_pdrop,
+                        "name": attention,
+                        "dropout": config.attn_pdrop,
                         "causal": True,
-                        "seq_len": self.hparams.block_size,
-                        "num_rules": self.hparams.n_head,
+                        "seq_len": config.block_size,
+                        "num_rules": config.n_head,
                     },
                 },
                 "feedforward_config": {
                     "name": "FusedMLP",  # Use MLP if Triton is not available
-                    "dropout": self.hparams.mlp_pdrop,
+                    "dropout": mlp_pdrop,
                     "activation": "gelu",
-                    "hidden_layer_multiplier": self.hparams.hidden_layer_multiplier,
+                    "hidden_layer_multiplier": hidden_layer_multiplier,
                 },
             }
         ]
@@ -144,20 +150,26 @@ class XFormersGPT(GPT):
 
         transformer = xformer.xFormer.from_config(config)
 
-        ln_f = nn.LayerNorm(self.hparams.n_embd)
-        lm_head = nn.Linear(self.hparams.n_embd, self.hparams.vocab_size, bias=False)
+        ln_f = nn.LayerNorm(config.n_embd)
+        lm_head = nn.Linear(config.n_embd, config.vocab_size, bias=False)
 
-        # self.block_size = self.hparams.block_size
-
-        self.mingpt = mingpt.model.GPT(self.config)
-        self.mingpt.transformer = transformer
-        self.mingpt.lm_head = lm_head
+        self.transformer = transformer
+        self.lm_head = lm_head
 
         self.apply(self._init_weights)
         for pn, p in self.named_parameters():
-            if pn.endswith('c_proj.weight'):
-                nn.init.normal_(p, mean=0.0, std=0.02/math.sqrt(2 * config.n_layer))
+            if pn.endswith("c_proj.weight"):
+                nn.init.normal_(p, mean=0.0, std=0.02 / math.sqrt(2 * config.n_layer))
 
         # report number of parameters (note we don't count the decoder parameters in lm_head)
         n_params = sum(p.numel() for p in self.transformer.parameters())
         print(f"number of parameters: {n_params/1e6:.2f}M")
+
+
+class XFormersGPT(GPT):
+    def __init__(self, attention="scaled_dot_product", mlp_pdrop=0.1, hidden_layer_multiplier=4, **kwargs):
+        super().__init__(**kwargs)
+        self.save_hyperparameters()
+        self.build_mingpt_configs()
+
+        self.mingpt = _XFormersMinGPT(self.config)

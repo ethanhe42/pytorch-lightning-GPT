@@ -7,7 +7,6 @@ from lightning.pytorch.utilities import rank_zero_info
 
 
 class CUDAMetricsCallback(Callback):
-
     def on_train_epoch_start(self, trainer, pl_module):
         # Reset the memory use counter
         torch.cuda.reset_peak_memory_stats(self.root_gpu(trainer))
@@ -16,7 +15,7 @@ class CUDAMetricsCallback(Callback):
 
     def on_train_epoch_end(self, trainer, pl_module):
         torch.cuda.synchronize(self.root_gpu(trainer))
-        max_memory = torch.cuda.max_memory_allocated(self.root_gpu(trainer)) / 2 ** 20
+        max_memory = torch.cuda.max_memory_allocated(self.root_gpu(trainer)) / 2**20
         epoch_time = time.time() - self.start_time
 
         max_memory = trainer.strategy.reduce(max_memory)
