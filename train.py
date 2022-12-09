@@ -31,7 +31,7 @@ def main(args):
         extra_kwargs["attention"] = "scaled_dot_product"
         extra_kwargs["mlp_pdrop"] = 0.1
         extra_kwargs["hidden_layer_multiplier"] = 4
-        extra_kwargs["feedforward"] = "mlp" # use fusedmlp if Triton is available
+        extra_kwargs["feedforward"] = "mlp"  # use fusedmlp if Triton is available
 
     with init_meta_context():
         model = GPT_class(
@@ -93,8 +93,8 @@ if __name__ == "__main__":
     parser.add_argument("--block_size", default=128, type=int)
     parser.add_argument("--batch_size", default=64, type=int)
     parser.add_argument("--num_workers", default=4, type=int)
-    parser.add_argument("--compile", default=0, type=int)
-    parser.add_argument("--implementation", default=0, choices=["mingpt", "deepspeed", "xformers"])
+    parser.add_argument("--compile", default="dynamo", choices=["dynamo"])
+    parser.add_argument("--implementation", default="mingpt", choices=["mingpt", "deepspeed", "xformers"])
     args = parser.parse_args()
 
     main(args)
