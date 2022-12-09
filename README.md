@@ -75,6 +75,13 @@ python train.py --compile dynamo
 Note that you will need a recent `torch` nightly (1.14.x) for `torch.compile`
 to be available.
 
+## Credits
+
+- https://github.com/karpathy/minGPT
+- https://github.com/SeanNaren/minGPT
+- https://pytorch-lightning.readthedocs.io/en/stable/advanced/model_parallel.html
+- https://devblog.pytorchlightning.ai/part-i-simplifying-transformer-research-with-xformers-lightning-a715737b8ad4
+
 ## License
 
 Apache 2.0 license https://opensource.org/licenses/Apache-2.0
