@@ -14,17 +14,24 @@ def main(args):
     if not os.path.exists("input.txt"):
         os.system("wget https://raw.githubusercontent.com/karpathy/char-rnn/master/data/tinyshakespeare/input.txt")
 
-    text = open('input.txt').read()  # don't worry we won't run out of file handles
+    text = open("input.txt").read()  # don't worry we won't run out of file handles
     train_dataset = data.CharDataset(text, args.block_size)  # one line of poem is roughly 50 characters
 
     train_loader = DataLoader(train_dataset, batch_size=args.batch_size, num_workers=args.num_workers)
 
     GPT_class = models.GPT
-
     extra_kwargs = {}
-    if args.deepspeed:
+
+    if args.implementation == "deepspeed":
         GPT_class = models.DeepSpeedGPT
-        extra_kwargs["deepspeed_offload"] = args.deepspeed_offload
+        extra_kwargs["deepspeed_offload"] = False
+
+    elif args.implementation == "xformers":
+        GPT_class = models.XFormersGPT
+        extra_kwargs["attention"] = "scaled_dot_product"
+        extra_kwargs["mlp_pdrop"] = 0.1
+        extra_kwargs["hidden_layer_multiplier"] = 4
+        extra_kwargs["feedforward"] = "mlp" # use fusedmlp if Triton is available
 
     with init_meta_context():
         model = GPT_class(
@@ -40,7 +47,7 @@ def main(args):
             weight_decay=0.1,
             learning_rate=args.learning_rate,
             betas=(0.9, 0.95),
-            **extra_kwargs
+            **extra_kwargs,
         )
 
     if args.compile:
@@ -54,7 +61,7 @@ def main(args):
     callback_list = []
 
     if torch.cuda.is_available():
-        torch.set_float32_matmul_precision('high')
+        torch.set_float32_matmul_precision("high")
         callback_list.append(callbacks.CUDAMetricsCallback())
 
     trainer = L.Trainer.from_argparse_args(
@@ -78,17 +85,16 @@ if __name__ == "__main__":
     parser = ArgumentParser()
     parser = L.Trainer.add_argparse_args(parser)
 
-    parser.add_argument('--model_type', default="gpt2", type=str)
-    parser.add_argument('--n_layer', type=int)
-    parser.add_argument('--n_head', type=int)
-    parser.add_argument('--n_embd', type=int)
-    parser.add_argument('--learning_rate', default=3e-4, type=float)
-    parser.add_argument('--block_size', default=128, type=int)
-    parser.add_argument('--batch_size', default=64, type=int)
-    parser.add_argument('--num_workers', default=4, type=int)
-    parser.add_argument('--compile', default=0, type=int)
-    parser.add_argument('--deepspeed', default=0, type=int)
-    parser.add_argument('--deepspeed-offload', default=0, type=int)
+    parser.add_argument("--model_type", default="gpt2", type=str)
+    parser.add_argument("--n_layer", type=int)
+    parser.add_argument("--n_head", type=int)
+    parser.add_argument("--n_embd", type=int)
+    parser.add_argument("--learning_rate", default=3e-4, type=float)
+    parser.add_argument("--block_size", default=128, type=int)
+    parser.add_argument("--batch_size", default=64, type=int)
+    parser.add_argument("--num_workers", default=4, type=int)
+    parser.add_argument("--compile", default=0, type=int)
+    parser.add_argument("--implementation", default=0, choices=["mingpt", "deepspeed", "xformers"])
     args = parser.parse_args()
 
     main(args)
