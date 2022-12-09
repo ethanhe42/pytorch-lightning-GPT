@@ -4,7 +4,7 @@ lightning-gpt is an implementation of Andrej Karpathy's minGPT in Lightning.
 
 It is aimed at providing a minimal Lightning layer on top of minGPT, while leveraging the full breadth of Lightning.
 
-There are currently two options:
+There are currently a few options:
 
 - GPT: the GPT model from minGPT vanilla
 - DeepSpeedGPT: the GPT model from minGPT made DeepSpeed-ready
