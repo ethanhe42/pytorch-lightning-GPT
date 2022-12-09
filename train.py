@@ -20,11 +20,18 @@ def main(args):
     train_loader = DataLoader(train_dataset, batch_size=args.batch_size, num_workers=args.num_workers)
 
     GPT_class = models.GPT
-
     extra_kwargs = {}
-    if args.deepspeed:
+
+    if args.implementation == "deepspeed":
         GPT_class = models.DeepSpeedGPT
-        extra_kwargs["deepspeed_offload"] = args.deepspeed_offload
+        extra_kwargs["deepspeed_offload"] = False
+
+    elif args.implementation == "xformers":
+        GPT_class = models.XFormersGPT
+        extra_kwargs["attention"] = "scaled_dot_product"
+        extra_kwargs["mlp_pdrop"] = 0.1
+        extra_kwargs["hidden_layer_multiplier"] = 4
+        extra_kwargs["feedforward"] = "mlp" # use fusedmlp if Triton is available
 
     with init_meta_context():
         model = GPT_class(
@@ -87,8 +94,7 @@ if __name__ == "__main__":
     parser.add_argument("--batch_size", default=64, type=int)
     parser.add_argument("--num_workers", default=4, type=int)
     parser.add_argument("--compile", default=0, type=int)
-    parser.add_argument("--deepspeed", default=0, type=int)
-    parser.add_argument("--deepspeed-offload", default=0, type=int)
+    parser.add_argument("--implementation", default=0, choices=["mingpt", "deepspeed", "xformers"])
     args = parser.parse_args()
 
     main(args)
