@@ -31,6 +31,9 @@ MINGPT_PRESETS = {
     "gpt2-medium": dict(n_layer=24, n_head=16, n_embd=1024),  # 350M params
     "gpt2-large": dict(n_layer=36, n_head=20, n_embd=1280),  # 774M params
     "gpt2-xl": dict(n_layer=48, n_head=25, n_embd=1600),  # 1558M params
+    "gpt2-xxl": dict(n_layer=96, n_head=25, n_embd=1600),  # 2951M params
+    "gpt2-xxxl": dict(n_layer=100, n_head=30, n_embd=1920),  # 4426M params
+    "gpt2-4xl": dict(n_layer=190, n_head=30, n_embd=1920),  # 8409M params
     # Gophers
     "gopher-44m": dict(n_layer=8, n_head=16, n_embd=512),
     # (there are a number more...)
