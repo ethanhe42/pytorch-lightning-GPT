@@ -24,7 +24,7 @@ def main(args):
 
     if args.implementation == "deepspeed":
         GPT_class = models.DeepSpeedGPT
-        extra_kwargs["deepspeed_offload"] = False
+        extra_kwargs["offload"] = False
 
     elif args.implementation == "xformers":
         GPT_class = models.XFormersGPT
@@ -69,6 +69,8 @@ def main(args):
         max_epochs=10,
         gradient_clip_val=1.0,
         callbacks=callback_list,
+        accelerator="auto",
+        devices="auto"
     )
 
     trainer.fit(model, train_loader)
@@ -93,7 +95,7 @@ if __name__ == "__main__":
     parser.add_argument("--block_size", default=128, type=int)
     parser.add_argument("--batch_size", default=64, type=int)
     parser.add_argument("--num_workers", default=4, type=int)
-    parser.add_argument("--compile", default="dynamo", choices=["dynamo"])
+    parser.add_argument("--compile", default=None, choices=[None, "dynamo"])
     parser.add_argument("--implementation", default="mingpt", choices=["mingpt", "deepspeed", "xformers"])
     args = parser.parse_args()
 
