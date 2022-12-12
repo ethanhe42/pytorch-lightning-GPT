@@ -70,7 +70,8 @@ def main(args):
         gradient_clip_val=1.0,
         callbacks=callback_list,
         accelerator="auto",
-        devices="auto"
+        devices="auto",
+        precision=16,
     )
 
     trainer.fit(model, train_loader)
