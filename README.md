@@ -1,6 +1,6 @@
-# lightning-gpt
+# lightning-minGPT
 
-lightning-gpt is an implementation of Andrej Karpathy's minGPT in Lightning.
+lightning-minGPT is an implementation of Andrej Karpathy's minGPT in Lightning.
 
 It is aimed at providing a minimal Lightning layer on top of minGPT, while leveraging the full breadth of Lightning.
 
@@ -12,7 +12,11 @@ There are currently a few options:
 
 minGPT is vendored with the repo in the `mingpt` directory. Find the LICENSE for minGPT there.
 
-Thanks to @karpathy for the original minGPT implementation and @SeanNaren for the DeepSpeed pieces.
+Thanks to:
+- @karpathy for the original minGPT implementation
+- @williamFalcon for the first Lightning port
+- @SeanNaren for the DeepSpeed pieces
+- @SeanNaren and @tchaton for the XFormer pieces
 
 ## MinGPT
 
