@@ -2,7 +2,7 @@
 
 from setuptools import find_packages, setup
 
-PACKAGE_NAME = "lightning_gpt"
+PACKAGE_NAME = "lightning_mingpt"
 
 with open("requirements.txt") as f:
     requirements = f.read().splitlines()
