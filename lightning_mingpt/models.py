@@ -14,7 +14,7 @@ from lightning.pytorch.utilities.model_helpers import is_overridden
 if _DEEPSPEED_AVAILABLE:
     from deepspeed.ops.adam import DeepSpeedCPUAdam, FusedAdam
 
-_XFORMERS_AVAILABLE = True
+_XFORMERS_AVAILABLE = False
 try:
     import xformers.factory as xformers
 
