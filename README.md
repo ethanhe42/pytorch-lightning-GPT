@@ -8,7 +8,6 @@ There are currently a few options:
 
 - GPT: the GPT model from minGPT vanilla
 - DeepSpeedGPT: the GPT model from minGPT made DeepSpeed-ready
-- XFormersGPT: the GPT model from minGPT implemented using XFormers
 
 minGPT is vendored with the repo in the `mingpt` directory. Find the LICENSE for minGPT there.
 
@@ -16,7 +15,6 @@ Thanks to:
 - @karpathy for the original minGPT implementation
 - @williamFalcon for the first Lightning port
 - @SeanNaren for the DeepSpeed pieces
-- @SeanNaren and @tchaton for the XFormer pieces
 
 ## MinGPT
 
@@ -54,20 +52,6 @@ and pass the `implementation` flag to the script
 python train.py --implementation deepspeed
 ```
 
-## MinGPT XFormers
-
-Install the extra-dependencies:
-
-```shell
-pip install -r requirements-xformers.txt
-```
-
-and pass the `implementation` flag to the script
-
-```shell
-python train.py --implementation xformers
-```
-
 ## PyTorch 2.0
 
 To run on dynamo/inductor from the PyTorch 2.0 compiler stack, run
@@ -84,7 +68,6 @@ to be available.
 - https://github.com/karpathy/minGPT
 - https://github.com/SeanNaren/minGPT
 - https://pytorch-lightning.readthedocs.io/en/stable/advanced/model_parallel.html
-- https://devblog.pytorchlightning.ai/part-i-simplifying-transformer-research-with-xformers-lightning-a715737b8ad4
 
 ## License
 
