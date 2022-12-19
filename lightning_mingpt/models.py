@@ -14,14 +14,6 @@ from lightning.pytorch.utilities.model_helpers import is_overridden
 if _DEEPSPEED_AVAILABLE:
     from deepspeed.ops.adam import DeepSpeedCPUAdam, FusedAdam
 
-_XFORMERS_AVAILABLE = False
-try:
-    import xformers.factory as xformers
-
-    _XFORMERS_AVAILABLE = True
-except ImportError:
-    pass
-
 
 MINGPT_PRESETS = {
     # names follow the huggingface naming conventions
@@ -103,12 +95,15 @@ class GPT(L.LightningModule):
         hparams = {k: v for k, v in self.hparams.items() if k in keys}
         config.merge_from_dict(hparams)
 
+    def forward(self, idx, targets=None):
+        return self.mingpt(idx, targets)
+
     def configure_optimizers(self):
         return self.mingpt.configure_optimizers(self.mingpt_trainer_config)
 
     def training_step(self, batch, batch_idx):
         idx, targets = batch
-        _, loss = self.mingpt(idx, targets)
+        _, loss = self(idx, targets)
         self.log("train_loss", loss)
         return loss
 
@@ -133,84 +128,3 @@ class DeepSpeedGPT(GPT):
 
     def configure_sharded_model(self) -> None:
         self.mingpt = mingpt.model.GPT(self.mingpt_config)
-
-
-class _XFormersMinGPT(mingpt.model.GPT):
-    def __init__(
-        self,
-        mingpt_config,
-        attention="scaled_dot_product",
-        feedforward="mlp",
-        mlp_pdrop=0.1,
-        hidden_layer_multiplier=4,
-    ):
-        # We skip super().__init__() to avoid allocating weights for minGPT
-        # and instead let xformers do it
-        nn.Module.__init__(self)
-
-        ffwd = dict(mlp="MLP", fusedmlp="FusedMLP")[feedforward]
-
-        # A list of the encoder or decoder blocks which constitute the Transformer.
-        xformer_config = [
-            {
-                "reversible": False,  # Turn on to test the effect of using reversible layers
-                "block_type": "encoder",
-                "num_layers": mingpt_config.n_layer,
-                "dim_model": mingpt_config.n_embd,
-                "residual_norm_style": "post",
-                "position_encoding_config": {
-                    "name": "vocab",
-                    "seq_len": mingpt_config.block_size,
-                    "vocab_size": mingpt_config.vocab_size,
-                },
-                "multi_head_config": {
-                    "num_heads": mingpt_config.n_head,
-                    "residual_dropout": mingpt_config.resid_pdrop,
-                    "use_rotary_embeddings": True,
-                    "attention": {
-                        "name": attention,
-                        "dropout": mingpt_config.attn_pdrop,
-                        "causal": True,
-                        "seq_len": mingpt_config.block_size,
-                        "num_rules": mingpt_config.n_head,
-                    },
-                },
-                "feedforward_config": {
-                    "name": ffwd,
-                    "dropout": mlp_pdrop,
-                    "activation": "gelu",
-                    "hidden_layer_multiplier": hidden_layer_multiplier,
-                },
-            }
-        ]
-
-        config = xformers.xFormerConfig(xformer_config)
-        config.weight_init = "small"
-
-        transformer = xformers.xFormer.from_config(config)
-
-        ln_f = nn.LayerNorm(mingpt_config.n_embd)
-        lm_head = nn.Linear(mingpt_config.n_embd, mingpt_config.vocab_size, bias=False)
-
-        self.transformer = transformer
-        self.lm_head = lm_head
-
-        self.apply(self._init_weights)
-        for pn, p in self.named_parameters():
-            if pn.endswith("c_proj.weight"):
-                nn.init.normal_(p, mean=0.0, std=0.02 / math.sqrt(2 * mingpt_config.n_layer))
-
-        # report number of parameters (note we don't count the decoder parameters in lm_head)
-        n_params = sum(p.numel() for p in self.transformer.parameters())
-        print(f"number of parameters: {n_params/1e6:.2f}M")
-
-
-class XFormersGPT(GPT):
-    def __init__(
-        self, attention="scaled_dot_product", mlp_pdrop=0.1, hidden_layer_multiplier=4, feedforward="mlp", **kwargs
-    ):
-        super().__init__(**kwargs)
-        self.save_hyperparameters()
-        self.build_mingpt_configs()
-
-        self.mingpt = _XFormersMinGPT(self.mingpt_config)

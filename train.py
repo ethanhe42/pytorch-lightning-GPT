@@ -25,12 +25,8 @@ def main(args):
         GPT_class = models.DeepSpeedGPT
         extra_kwargs["offload"] = False
 
-    elif args.implementation == "xformers":
-        GPT_class = models.XFormersGPT
-        extra_kwargs["attention"] = "scaled_dot_product"
-        extra_kwargs["mlp_pdrop"] = 0.1
-        extra_kwargs["hidden_layer_multiplier"] = 4
-        extra_kwargs["feedforward"] = "mlp"  # use fusedmlp if Triton is available
+    else:
+        raise ValueError(f"Unsupported implementation {args.implementation}")
 
     model = GPT_class(
         vocab_size=train_dataset.vocab_size,
@@ -95,7 +91,7 @@ if __name__ == "__main__":
     parser.add_argument("--batch_size", default=64, type=int)
     parser.add_argument("--num_workers", default=4, type=int)
     parser.add_argument("--compile", default=None, choices=[None, "dynamo"])
-    parser.add_argument("--implementation", default="mingpt", choices=["mingpt", "deepspeed", "xformers"])
+    parser.add_argument("--implementation", default="mingpt", choices=["mingpt", "deepspeed"])
     args = parser.parse_args()
 
     main(args)
