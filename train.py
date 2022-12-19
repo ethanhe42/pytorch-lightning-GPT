@@ -5,7 +5,6 @@ import torch
 from torch.utils.data import DataLoader
 
 import lightning as L
-from lightning.pytorch.utilities.meta import init_meta_context
 
 from lightning_gpt import data, models, callbacks
 
@@ -33,22 +32,21 @@ def main(args):
         extra_kwargs["hidden_layer_multiplier"] = 4
         extra_kwargs["feedforward"] = "mlp"  # use fusedmlp if Triton is available
 
-    with init_meta_context():
-        model = GPT_class(
-            vocab_size=train_dataset.vocab_size,
-            block_size=train_dataset.block_size,
-            model_type=args.model_type,
-            n_layer=args.n_layer,
-            n_head=args.n_head,
-            n_embd=args.n_embd,
-            embd_pdrop=0.1,
-            resid_pdrop=0.1,
-            attn_pdrop=0.1,
-            weight_decay=0.1,
-            learning_rate=args.learning_rate,
-            betas=(0.9, 0.95),
-            **extra_kwargs,
-        )
+    model = GPT_class(
+        vocab_size=train_dataset.vocab_size,
+        block_size=train_dataset.block_size,
+        model_type=args.model_type,
+        n_layer=args.n_layer,
+        n_head=args.n_head,
+        n_embd=args.n_embd,
+        embd_pdrop=0.1,
+        resid_pdrop=0.1,
+        attn_pdrop=0.1,
+        weight_decay=0.1,
+        learning_rate=args.learning_rate,
+        betas=(0.9, 0.95),
+        **extra_kwargs,
+    )
 
     if args.compile:
         if not hasattr(torch, "compile"):
