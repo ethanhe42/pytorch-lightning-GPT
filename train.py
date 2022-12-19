@@ -6,7 +6,7 @@ from torch.utils.data import DataLoader
 
 import lightning as L
 
-from lightning_gpt import data, models, callbacks
+from lightning_mingpt import data, models, callbacks
 
 
 def main(args):
