@@ -18,10 +18,13 @@ def main(args):
 
     train_loader = DataLoader(train_dataset, batch_size=args.batch_size, num_workers=args.num_workers)
 
-    GPT_class = models.GPT
+    GPT_class = None
     extra_kwargs = {}
 
-    if args.implementation == "deepspeed":
+    if args.implementation == "mingpt":
+        GPT_class = models.GPT
+
+    elif args.implementation == "deepspeed":
         GPT_class = models.DeepSpeedGPT
         extra_kwargs["offload"] = False
 
