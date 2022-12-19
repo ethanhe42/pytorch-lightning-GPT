@@ -9,6 +9,7 @@ import mingpt.trainer
 
 from lightning.pytorch.strategies import DeepSpeedStrategy
 from lightning.pytorch.strategies.deepspeed import _DEEPSPEED_AVAILABLE
+from lightning.pytorch.utilities.model_helpers import is_overridden
 
 if _DEEPSPEED_AVAILABLE:
     from deepspeed.ops.adam import DeepSpeedCPUAdam, FusedAdam
@@ -45,6 +46,8 @@ MINGPT_PRESETS = {
 
 
 class GPT(L.LightningModule):
+    mingpt: nn.Module
+
     def __init__(
         self,
         vocab_size,
@@ -63,7 +66,8 @@ class GPT(L.LightningModule):
         super().__init__()
         self.save_hyperparameters()
         self.build_mingpt_configs()
-        self.mingpt = mingpt.model.GPT(self.mingpt_config)
+        if not is_overridden('configure_sharded_model', self, L.LightningModule):
+            self.mingpt = mingpt.model.GPT(self.mingpt_config)
 
     def build_mingpt_configs(self):
         params = [
@@ -126,6 +130,9 @@ class DeepSpeedGPT(GPT):
             return DeepSpeedCPUAdam(optim_groups, lr=self.hparams.learning_rate, betas=self.hparams.betas)
 
         return FusedAdam(optim_groups, lr=self.hparams.learning_rate, betas=self.hparams.betas)
+
+    def configure_sharded_model(self) -> None:
+        self.mingpt = mingpt.model.GPT(self.mingpt_config)
 
 
 class _XFormersMinGPT(mingpt.model.GPT):
