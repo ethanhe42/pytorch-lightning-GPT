@@ -7,10 +7,10 @@ import lightning as L
 
 
 class Bench(L.LightningWork):
-    def __init__(self, num_runs=10):
-        self.num_runs = num_runs
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
 
-    def run_benchmark(self, fn, args=[], kwargs={}, device_type="auto"):
+    def run_benchmark(self, fn, args=[], kwargs={}, num_runs=10, device_type="auto"):
         """Returns an array with the last loss from each epoch for each run."""
         hist_losses = []
         hist_durations = []

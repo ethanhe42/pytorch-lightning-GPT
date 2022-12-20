@@ -1,10 +1,7 @@
 #! pip install light-the-torch
 #! ltt install --pytorch-channel nightly torch --upgrade 
-#! pip install git+https://github.com/Lightning-AI/lightning-minGPT@bench
+#! pip install git+https://github.com/Lightning-AI/lightning-minGPT@bench --upgrade
 #! curl https://cs.stanford.edu/people/karpathy/char-rnn/shakespeare_input.txt --create-dirs -o ${HOME}/data/input.txt -C -
-
-
-# pip install -U --pre torch --extra-index-url https://download.pytorch.org/whl/nightly/cu117
 
 import os
 
@@ -16,13 +13,14 @@ from lightning_mingpt import data, models, callbacks, bench
 
 
 class GPTBench(bench.Bench):
-    def __init__(self, num_runs=1, *args, **kwargs):
-        super().__init__(num_runs, *args, **kwargs)
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
         self.num_workers = 4
         self.batch_size = 64
         self.max_epochs = 5
         self.precision = 16
         self.model_type = "gpt2"
+        self.num_runs = 5
 
     def create(self):
         torch.set_float32_matmul_precision("high")
@@ -68,7 +66,7 @@ class GPTBench(bench.Bench):
         self.run_benchmark(
             self.train,
             args=(model, dataloader),
-            num_runs=10
+            num_runs=self.num_runs
         )
 
         model, dataloader = self.create()
@@ -77,7 +75,7 @@ class GPTBench(bench.Bench):
         self.run_benchmark(
             self.train,
             args=(model, dataloader),
-            num_runs=10
+            num_runs=self.num_runs
         )
 
 
