@@ -65,6 +65,7 @@ class FSDPGPTBench(bench.Bench):
         model, dataloader = self.create()
 
         self.run_benchmark(
+            "nocompile",
             self.train,
             args=(model, dataloader),
             num_runs=self.num_runs
@@ -74,6 +75,7 @@ class FSDPGPTBench(bench.Bench):
         model = torch.compile(model)
 
         self.run_benchmark(
+            "compile",
             self.train,
             args=(model, dataloader),
             num_runs=self.num_runs
@@ -81,5 +83,9 @@ class FSDPGPTBench(bench.Bench):
 
 
 app = L.LightningApp(
-    FSDPGPTBench(cloud_compute=L.CloudCompute("gpu-fast")),
+    bench.BenchRun(
+        FSDPGPTBench,
+        num_nodes=2,
+        cloud_compute=L.CloudCompute("gpu-fast"),
+    )
 )

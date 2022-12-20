@@ -1,16 +1,58 @@
 import gc
 import time
+from typing import Type
 
 import torch
 
 import lightning as L
+from lightning.app import structures
+from lightning.app.components import LightningTrainerMultiNode
+
+
+class BenchRun(L.LightningFlow):
+    def __init__(
+        self,
+        work_cls: Type[L.LightningWork],
+        num_nodes: int,
+        cloud_compute: L.CloudCompute,
+    ):
+        super().__init__()
+        self.num_nodes = num_nodes
+        self.results = structures.List()
+
+        if num_nodes > 1:
+            self.multinode = LightningTrainerMultiNode(
+                work_cls,
+                num_nodes=num_nodes,
+                cloud_compute=cloud_compute,
+            )
+        else:
+            self.w = work_cls(cloud_compute=cloud_compute)
+    
+    def run(self, *args, **kwargs):
+        results = []
+        if self.num_nodes > 1:
+            self.multinode.run(*args, **kwargs)
+            # wait until finished
+            if all(w.has_succeeded for w in self.multinode.ws):
+                results = [w.results for w in self.multinode.ws]
+        else:
+            self.w.run()
+            results = self.w.results
+        self.results = structures.List(*results)
+        print(self.results)
+
+    def configure_layout(self):
+        return ...
+        # return [{"name": "Training Logs", "content": self.tensorboard_work.url}]
 
 
 class Bench(L.LightningWork):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        self.results = structures.Dict()
 
-    def run_benchmark(self, fn, args=[], kwargs={}, num_runs=10, device_type="auto"):
+    def run_benchmark(self, name, fn, args=[], kwargs={}, num_runs=10, device_type="auto"):
         """Returns an array with the last loss from each epoch for each run."""
         hist_losses = []
         hist_durations = []
@@ -35,4 +77,8 @@ class Bench(L.LightningWork):
             hist_durations.append(time_end - time_start)
             hist_memory.append(used_memory)
     
-        return {"losses": hist_losses, "durations": hist_durations, "memory": hist_memory}
+        self.results[name] = dict(
+            losses=hist_losses,
+            durations=hist_durations,
+            memory=hist_memory
+        )
