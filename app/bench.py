@@ -16,11 +16,11 @@ from lightning_mingpt import data, models, callbacks, bench
 
 
 class GPTBench(bench.Bench):
-    def __init__(self, num_runs, *args, **kwargs):
+    def __init__(self, num_runs=1, *args, **kwargs):
         super().__init__(num_runs, *args, **kwargs)
         self.num_workers = 4
         self.batch_size = 64
-        self.max_epochs = 10
+        self.max_epochs = 5
         self.precision = 16
         self.model_type = "gpt2"
 
