@@ -1,5 +1,6 @@
+#! pip install light-the-torch
 #! ltt install --pytorch-channel nightly torch --upgrade 
-#! pip install git+https://github.com/Lightning-AI/lightning-minGPT
+#! pip install git+https://github.com/Lightning-AI/lightning-minGPT@bench
 #! curl https://cs.stanford.edu/people/karpathy/char-rnn/shakespeare_input.txt --create-dirs -o ${HOME}/data/input.txt -C -
 
 
