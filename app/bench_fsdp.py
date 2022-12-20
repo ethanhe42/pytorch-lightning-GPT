@@ -1,15 +1,10 @@
-#! pip install light-the-torch
-#! ltt install --pytorch-channel nightly torch --upgrade 
-#! pip install git+https://github.com/Lightning-AI/lightning-minGPT@bench --upgrade
-#! curl https://cs.stanford.edu/people/karpathy/char-rnn/shakespeare_input.txt --create-dirs -o ${HOME}/data/input.txt -C -
-
-import os
+from urllib.request import urlopen
 
 import torch
 from torch.utils.data import DataLoader
 
 import lightning as L
-from lightning_mingpt import data, models, callbacks, bench
+from lightning_mingpt import data, models, bench
 
 
 class FSDPGPTBench(bench.Bench):
@@ -25,17 +20,13 @@ class FSDPGPTBench(bench.Bench):
     def create(self):
         torch.set_float32_matmul_precision("high")
 
-        with open(os.path.expanduser("~/data/input.txt")) as f:
+        with urlopen("https://cs.stanford.edu/people/karpathy/char-rnn/shakespeare_input.txt") as f:
             text = f.read()
 
         dataset = data.CharDataset(text, block_size=128)
-        dataloader = DataLoader(
-            dataset,
-            batch_size=self.batch_size,
-            num_workers=self.num_workers
-        )
+        dataloader = DataLoader(dataset, batch_size=self.batch_size, num_workers=self.num_workers)
 
-        model = models.FSDPGPT(
+        model = models.GPT(
             vocab_size=dataset.vocab_size,
             block_size=dataset.block_size,
             model_type=self.model_type,
@@ -45,9 +36,9 @@ class FSDPGPTBench(bench.Bench):
 
     def train(self, model, dataloader):
         trainer = L.Trainer(
+            fast_dev_run=True,
             max_epochs=self.max_epochs,
             gradient_clip_val=1.0,
-            callbacks=callbacks.CUDAMetricsCallback(),
             accelerator="cuda",
             devices="auto",
             precision=self.precision,
@@ -67,8 +58,8 @@ class FSDPGPTBench(bench.Bench):
         model, dataloader = self.create()
 
         self.run_benchmark(
-            "nocompile",
-            self.train,
+            name="nocompile",
+            fn=self.train,
             args=(model, dataloader),
             num_runs=self.num_runs
         )

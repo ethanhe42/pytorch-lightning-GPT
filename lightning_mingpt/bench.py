@@ -85,8 +85,8 @@ class Bench(L.LightningWork):
             hist_durations.append(time_end - time_start)
             hist_memory.append(used_memory)
     
-        # self.results[name] = dict(
-        #     losses=hist_losses,
-        #     durations=hist_durations,
-        #     memory=hist_memory
-        # )
+        self.results[name] = dict(
+            losses=hist_losses,
+            durations=hist_durations,
+            memory=hist_memory
+        )
