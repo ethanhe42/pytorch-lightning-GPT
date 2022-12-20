@@ -45,6 +45,7 @@ class GPTBench(bench.Bench):
 
     def train(self, model, dataloader):
         trainer = L.Trainer(
+            fast_dev_run=True,
             max_epochs=self.max_epochs,
             gradient_clip_val=1.0,
             callbacks=callbacks.CUDAMetricsCallback(),
@@ -59,13 +60,15 @@ class GPTBench(bench.Bench):
         )
 
         trainer.fit(model, dataloader)
+        final_loss = trainer.fit_loop.running_loss.last().item()
+        return final_loss
 
     def run(self):
         model, dataloader = self.create()
 
         self.run_benchmark(
-            "nocompile",
-            self.train,
+            name="nocompile",
+            fn=self.train,
             args=(model, dataloader),
             num_runs=self.num_runs
         )

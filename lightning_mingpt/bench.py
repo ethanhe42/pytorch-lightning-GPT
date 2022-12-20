@@ -5,8 +5,16 @@ from typing import Type
 import torch
 
 import lightning as L
-from lightning.app import structures
 from lightning.app.components import LightningTrainerMultiNode
+
+
+def _hook_memory():
+    if torch.cuda.is_available():
+        torch.cuda.synchronize()
+        used_memory = torch.cuda.max_memory_allocated()
+    else:
+        used_memory = -1
+    return used_memory
 
 
 class BenchRun(L.LightningFlow):
@@ -18,7 +26,7 @@ class BenchRun(L.LightningFlow):
     ):
         super().__init__()
         self.num_nodes = num_nodes
-        self.results = structures.List()
+        self.results = []
 
         if num_nodes > 1:
             self.multinode = LightningTrainerMultiNode(
@@ -39,18 +47,17 @@ class BenchRun(L.LightningFlow):
         else:
             self.w.run()
             results = self.w.results
-        self.results = structures.List(*results)
-        print(self.results)
+        self.results = results
+        #print(self.results)
 
-    def configure_layout(self):
-        return ...
-        # return [{"name": "Training Logs", "content": self.tensorboard_work.url}]
+    # def configure_layout(self):
+    #     # return [{"name": "Training Logs", "content": self.tensorboard_work.url}]
 
 
 class Bench(L.LightningWork):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.results = structures.Dict()
+        self.results = {}
 
     def run_benchmark(self, name, fn, args=[], kwargs={}, num_runs=10, device_type="auto"):
         """Returns an array with the last loss from each epoch for each run."""
@@ -70,15 +77,16 @@ class Bench(L.LightningWork):
             time.sleep(1)
     
             time_start = time.perf_counter()
-            final_loss, used_memory = fn(*args, **kwargs)
+            final_loss = fn(*args, **kwargs)
+            used_memory = _hook_memory()
             time_end = time.perf_counter()
     
             hist_losses.append(final_loss)
             hist_durations.append(time_end - time_start)
             hist_memory.append(used_memory)
     
-        self.results[name] = dict(
-            losses=hist_losses,
-            durations=hist_durations,
-            memory=hist_memory
-        )
+        # self.results[name] = dict(
+        #     losses=hist_losses,
+        #     durations=hist_durations,
+        #     memory=hist_memory
+        # )

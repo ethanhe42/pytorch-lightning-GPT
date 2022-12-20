@@ -60,6 +60,8 @@ class FSDPGPTBench(bench.Bench):
         )
 
         trainer.fit(model, dataloader)
+        final_loss = trainer.fit_loop.running_loss.last().item()
+        return final_loss
 
     def run(self):
         model, dataloader = self.create()
