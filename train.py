@@ -20,16 +20,24 @@ def main(args):
 
     GPT_class = None
     extra_kwargs = {}
+    strategy = None
 
     if args.implementation == "mingpt":
         GPT_class = models.GPT
 
-    elif args.implementation == "deepspeed":
-        GPT_class = models.DeepSpeedGPT
-        extra_kwargs["offload"] = False
+    # elif args.implementation == "deepspeed":
+    #     GPT_class = models.DeepSpeedGPT
+    #     extra_kwargs["offload"] = False
 
     else:
         raise ValueError(f"Unsupported implementation {args.implementation}")
+
+    if args.strategy == "deepspeed":
+        GPT_class = models.DeepSpeedGPT
+        extra_kwargs["offload"] = False
+
+    elif args.strategy == "fsdp_native":
+        GPT_class = models.FSDPGPT
 
     model = GPT_class(
         vocab_size=train_dataset.vocab_size,
@@ -68,7 +76,7 @@ def main(args):
         callbacks=callback_list,
         accelerator="auto",
         devices="auto",
-        precision=16,
+        precision=16
     )
 
     trainer.fit(model, train_loader)
@@ -94,7 +102,7 @@ if __name__ == "__main__":
     parser.add_argument("--batch_size", default=64, type=int)
     parser.add_argument("--num_workers", default=4, type=int)
     parser.add_argument("--compile", default=None, choices=[None, "dynamo"])
-    parser.add_argument("--implementation", default="mingpt", choices=["mingpt", "deepspeed"])
+    parser.add_argument("--implementation", default="mingpt", choices=["mingpt"])
     args = parser.parse_args()
 
     main(args)

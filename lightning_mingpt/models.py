@@ -3,6 +3,7 @@ import math
 import lightning as L
 
 import torch.nn as nn
+from torch.optim import AdamW
 
 import mingpt.model
 import mingpt.trainer
@@ -125,6 +126,21 @@ class DeepSpeedGPT(GPT):
             return DeepSpeedCPUAdam(optim_groups, lr=self.hparams.learning_rate, betas=self.hparams.betas)
 
         return FusedAdam(optim_groups, lr=self.hparams.learning_rate, betas=self.hparams.betas)
+
+    def configure_sharded_model(self) -> None:
+        self.mingpt = mingpt.model.GPT(self.mingpt_config)
+
+
+class FSDPGPT(GPT):
+    def __init__(self, offload=False, **kwargs):
+        super().__init__(**kwargs)
+        self.save_hyperparameters()
+
+    def configure_optimizers(self):
+        optimizer = super().configure_optimizers()
+        optim_groups = optimizer.param_groups
+
+        return AdamW(optim_groups, lr=self.hparams.learning_rate, betas=self.hparams.betas)
 
     def configure_sharded_model(self) -> None:
         self.mingpt = mingpt.model.GPT(self.mingpt_config)
