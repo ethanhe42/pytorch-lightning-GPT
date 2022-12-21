@@ -13,8 +13,8 @@ class GPTBench(bench.Bench):
         super().__init__(*args, **kwargs)
         self.num_workers = 0
         self.batch_size = 64
-        self.max_epochs = 1
-        # self.precision = 32
+        self.max_epochs = 2
+        self.precision = 32
         self.model_type = "gpt-micro"
         self.num_runs = 2
 
@@ -38,17 +38,18 @@ class GPTBench(bench.Bench):
 
     def train(self, model, dataloader):
         trainer = L.Trainer(
-            fast_dev_run=False,
             max_epochs=self.max_epochs,
             gradient_clip_val=1.0,
             accelerator="cuda",
             devices=1,
-            # precision=self.precision,
+            precision=self.precision,
             enable_progress_bar=False,
             enable_model_summary=False,
             enable_checkpointing=False,
             logger=False,
             replace_sampler_ddp=False,
+            num_sanity_val_steps=0,
+            reload_dataloaders_every_n_epochs=1000,
         )
 
         trainer.fit(model, dataloader)
@@ -66,8 +67,7 @@ class GPTBench(bench.Bench):
         )
 
         model, dataloader = self.create()
-        model.mingpt = torch.compile(model.mingpt)
-        # model = torch.compile(model)
+        model = torch.compile(model)
 
         self.run_benchmark(
             "compile",
