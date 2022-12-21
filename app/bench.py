@@ -59,24 +59,12 @@ class GPTBench(bench.Bench):
     def run(self):
         model, dataloader = self.create()
 
-        self.run_benchmark(
-            name="nocompile",
-            fn=self.train,
-            args=(model, dataloader),
-            num_runs=self.num_runs
-        )
+        self.run_benchmark(name="nocompile", fn=self.train, args=(model, dataloader), num_runs=self.num_runs)
 
         model, dataloader = self.create()
         model = torch.compile(model)
 
-        self.run_benchmark(
-            "compile",
-            self.train,
-            args=(model, dataloader),
-            num_runs=self.num_runs
-        )
+        self.run_benchmark("compile", self.train, args=(model, dataloader), num_runs=self.num_runs)
 
 
-app = L.LightningApp(
-        GPTBench(cloud_compute=L.CloudCompute("gpu-fast"))
-        )
+app = L.LightningApp(GPTBench(cloud_compute=L.CloudCompute("gpu-fast")))
