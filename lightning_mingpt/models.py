@@ -59,7 +59,7 @@ class GPT(L.LightningModule):
         super().__init__()
         self.save_hyperparameters()
         self.build_mingpt_configs()
-        if not is_overridden('configure_sharded_model', self, L.LightningModule):
+        if not is_overridden("configure_sharded_model", self, L.LightningModule):
             self.mingpt = mingpt.model.GPT(self.mingpt_config)
 
     def build_mingpt_configs(self):

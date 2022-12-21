@@ -36,7 +36,7 @@ class BenchRun(L.LightningFlow):
             )
         else:
             self.w = work_cls(cloud_compute=cloud_compute)
-    
+
     def run(self, *args, **kwargs):
         results = []
         if self.num_nodes > 1:
@@ -49,6 +49,7 @@ class BenchRun(L.LightningFlow):
             results = self.w.results
         self.results = results
         import pprint
+
         pprint.pprint(self.results)
 
     # def configure_layout(self):
@@ -65,7 +66,7 @@ class Bench(L.LightningWork):
         hist_losses = []
         hist_durations = []
         hist_memory = []
-    
+
         if device_type == "auto":
             device_type = "cuda" if torch.cuda.is_available() else "cpu"
         torch.backends.cudnn.deterministic = True
@@ -77,22 +78,18 @@ class Bench(L.LightningWork):
                 torch.cuda.reset_accumulated_memory_stats()
                 torch.cuda.reset_peak_memory_stats()
             time.sleep(1)
-    
+
             time_start = time.perf_counter()
             final_loss = fn(*args, **kwargs)
             used_memory = _hook_memory()
             time_end = time.perf_counter()
-    
+
             hist_losses.append(final_loss)
             hist_durations.append(time_end - time_start)
             hist_memory.append(used_memory)
-    
-        self.results[name] = dict(
-            losses=hist_losses,
-            durations=hist_durations,
-            memory=hist_memory
-        )
+
+        self.results[name] = dict(losses=hist_losses, durations=hist_durations, memory=hist_memory)
 
         import pprint
-        pprint.pprint(self.results)
 
+        pprint.pprint(self.results)
