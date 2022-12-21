@@ -1,6 +1,7 @@
 from urllib.request import urlopen
 
 import torch
+import torch._dynamo
 from torch.utils.data import DataLoader
 
 import lightning as L
@@ -14,11 +15,12 @@ class GPTBench(bench.Bench):
         self.batch_size = 64
         self.max_epochs = 5
         self.precision = 16
-        self.model_type = "gpt2"
-        self.num_runs = 5
+        self.model_type = "gpt-micro"
+        self.num_runs = 1
 
     def create(self):
         torch.set_float32_matmul_precision("high")
+        torch._dynamo.config.suppress_errors = True
 
         with urlopen("https://cs.stanford.edu/people/karpathy/char-rnn/shakespeare_input.txt") as f:
             text = f.read()
@@ -36,11 +38,11 @@ class GPTBench(bench.Bench):
 
     def train(self, model, dataloader):
         trainer = L.Trainer(
-            fast_dev_run=True,
+            fast_dev_run=False,
             max_epochs=self.max_epochs,
             gradient_clip_val=1.0,
             accelerator="cuda",
-            devices="auto",
+            devices=1,
             precision=self.precision,
             enable_progress_bar=False,
             enable_model_summary=False,
@@ -50,8 +52,8 @@ class GPTBench(bench.Bench):
         )
 
         trainer.fit(model, dataloader)
-        final_loss = trainer.fit_loop.running_loss.last().item()
-        return final_loss
+        final_loss = trainer.fit_loop.running_loss.last()
+        return final_loss.item() if final_loss is not None else None
 
     def run(self):
         model, dataloader = self.create()

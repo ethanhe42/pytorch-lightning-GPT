@@ -48,7 +48,8 @@ class BenchRun(L.LightningFlow):
             self.w.run()
             results = self.w.results
         self.results = results
-        #print(self.results)
+        import pprint
+        pprint.pprint(self.results)
 
     # def configure_layout(self):
     #     # return [{"name": "Training Logs", "content": self.tensorboard_work.url}]
@@ -69,6 +70,7 @@ class Bench(L.LightningWork):
             device_type = "cuda" if torch.cuda.is_available() else "cpu"
         torch.backends.cudnn.deterministic = True
         for i in range(self.num_runs):
+            print(f"Run {i+1}/{self.num_runs}")
             gc.collect()
             if device_type == "cuda":
                 torch.cuda.empty_cache()
@@ -90,3 +92,7 @@ class Bench(L.LightningWork):
             durations=hist_durations,
             memory=hist_memory
         )
+
+        import pprint
+        pprint.pprint(self.results)
+
