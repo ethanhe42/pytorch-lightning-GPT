@@ -1,5 +1,6 @@
 from argparse import ArgumentParser
 import os
+from urllib.request import urlopen
 
 import torch
 from torch.utils.data import DataLoader
@@ -10,24 +11,18 @@ from lightning_mingpt import data, models, callbacks
 
 
 def main(args):
-    if not os.path.exists("input.txt"):
-        os.system("curl https://raw.githubusercontent.com/karpathy/char-rnn/master/data/tinyshakespeare/input.txt -o input.txt -C -")
+    with urlopen("https://cs.stanford.edu/people/karpathy/char-rnn/shakespeare_input.txt") as f:
+        text = f.read()
 
-    text = open("input.txt").read()  # don't worry we won't run out of file handles
-    train_dataset = data.CharDataset(text, args.block_size)  # one line of poem is roughly 50 characters
+    train_dataset = data.CharDataset(text, args.block_size)
 
     train_loader = DataLoader(train_dataset, batch_size=args.batch_size, num_workers=args.num_workers)
 
     GPT_class = None
     extra_kwargs = {}
-    strategy = None
 
     if args.implementation == "mingpt":
         GPT_class = models.GPT
-
-    # elif args.implementation == "deepspeed":
-    #     GPT_class = models.DeepSpeedGPT
-    #     extra_kwargs["offload"] = False
 
     else:
         raise ValueError(f"Unsupported implementation {args.implementation}")
