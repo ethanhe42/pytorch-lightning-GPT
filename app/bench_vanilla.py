@@ -42,7 +42,7 @@ class GPTBench(bench.Bench):
 
         train_config = Trainer.get_default_config()
         train_config.learning_rate = 3e-4
-        train_config.max_iters = 100
+        train_config.max_iters = 1000
         train_config.num_workers = 0
         trainer = Trainer(train_config, model, dataset)
 

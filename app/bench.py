@@ -11,7 +11,7 @@ from lightning_mingpt import data, models, bench
 class GPTBench(bench.Bench):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.num_workers = 4
+        self.num_workers = 0
         self.batch_size = 64
         self.max_epochs = 1
         # self.precision = 32
@@ -66,7 +66,8 @@ class GPTBench(bench.Bench):
         )
 
         model, dataloader = self.create()
-        model = torch.compile(model)
+        model.mingpt = torch.compile(model.mingpt)
+        # model = torch.compile(model)
 
         self.run_benchmark(
             "compile",
