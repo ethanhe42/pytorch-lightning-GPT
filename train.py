@@ -11,7 +11,7 @@ from lightning_mingpt import data, models, callbacks
 
 def main(args):
     if not os.path.exists("input.txt"):
-        os.system("wget https://raw.githubusercontent.com/karpathy/char-rnn/master/data/tinyshakespeare/input.txt")
+        os.system("curl https://raw.githubusercontent.com/karpathy/char-rnn/master/data/tinyshakespeare/input.txt -o input.txt -C -")
 
     text = open("input.txt").read()  # don't worry we won't run out of file handles
     train_dataset = data.CharDataset(text, args.block_size)  # one line of poem is roughly 50 characters
