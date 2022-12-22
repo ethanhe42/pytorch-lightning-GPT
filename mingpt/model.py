@@ -210,20 +210,22 @@ class GPT(nn.Module):
 
         return model
 
-    def configure_optimizers(self, train_config):
+    def configure_optimizers(self, train_config, model: Optional[torch.nn.Module] = None):
         """This long function is unfortunately doing something very simple and is being very defensive:
 
         We are separating out all parameters of the model into two buckets: those that will experience weight decay for
         regularization and those that won't (biases, and layernorm/embedding weights). We are then returning the PyTorch
         optimizer object.
         """
+        
+        model = model or self
 
         # separate out all parameters to those that will and won't experience regularizing weight decay
         decay = set()
         no_decay = set()
         whitelist_weight_modules = (torch.nn.Linear, )
         blacklist_weight_modules = (torch.nn.LayerNorm, torch.nn.Embedding)
-        for mn, m in self.named_modules():
+        for mn, m in model.named_modules():
             for pn, p in m.named_parameters():
                 fpn = f'{mn}.{pn}' if mn else pn # full param name
                 # random note: because named_modules and named_parameters are recursive
@@ -240,7 +242,7 @@ class GPT(nn.Module):
                     no_decay.add(fpn)
 
         # validate that we considered every parameter
-        param_dict = {pn: p for pn, p in self.named_parameters()}
+        param_dict = {pn: p for pn, p in model.named_parameters()}
         inter_params = decay & no_decay
         union_params = decay | no_decay
         assert len(inter_params) == 0, f"parameters {str(inter_params)} made it into both decay/no_decay sets!"
