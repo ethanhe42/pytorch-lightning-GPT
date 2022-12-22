@@ -8,6 +8,7 @@ https://github.com/huggingface/transformers/blob/main/src/transformers/models/gp
 """
 
 import math
+from typing import Optional
 
 import torch
 import torch.nn as nn
