@@ -45,19 +45,11 @@ jobs:
         restore-keys: |
           ${{ runner.os }}-pip-py${{ matrix.python-version }}-
 
-    - name: datasets cache
-      uses: actions/cache@v3
-      with:
-        path: $HOME/.cache/torchtext
-        key: ${{ runner.os }}-datasets
-        restore-keys: |
-          ${{ runner.os }}-datasets
-
     - name: Install package & dependencies
       env:
         PACKAGE_NAME: ${{ matrix.pkg-name }}
       run: |
-        pip install . --upgrade --extra-index-url https://download.pytorch.org/whl/cpu
+        pip install . -r tests/requirements.txt --upgrade --extra-index-url https://download.pytorch.org/whl/cpu
         pip list
 
     - name: Testing
