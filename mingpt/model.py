@@ -242,7 +242,7 @@ class GPT(nn.Module):
                     no_decay.add(fpn)
 
         # validate that we considered every parameter
-        param_dict = {pn: p for pn, p in self.named_parameters()}
+        param_dict = {pn: p for pn, p in model.named_parameters()}
         inter_params = decay & no_decay
         union_params = decay | no_decay
         assert len(inter_params) == 0, f"parameters {str(inter_params)} made it into both decay/no_decay sets!"
