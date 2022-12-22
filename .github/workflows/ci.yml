@@ -1,0 +1,79 @@
+name: Test MinGPT
+
+# see: https://help.github.com/en/actions/reference/events-that-trigger-workflows
+on:
+  push:
+    branches: [main, "release/*"]
+  pull_request:
+    branches: [main, "release/*"]
+    types: [opened, reopened, ready_for_review, synchronize]  # added `ready_for_review` since draft is skipped
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}-${{ github.head_ref }}
+  cancel-in-progress: ${{ ! (github.ref == 'refs/heads/master' || startsWith(github.ref, 'refs/heads/release/')) }}
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  cpu:
+    runs-on: ${{ matrix.os }}
+    if: github.event.pull_request.draft == false
+    strategy:
+      fail-fast: false
+      matrix:
+        os: ['macOS-11', "ubuntu-20.04"]
+        python-version: ['3.7', '3.8', '3.9', '3.10']
+
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ matrix.python-version }}
+
+    - name: Get pip cache dir
+      id: pip-cache
+      run: echo "dir=$(pip cache dir)" >> $GITHUB_OUTPUT
+
+    - name: pip cache
+      uses: actions/cache@v3
+      with:
+        path: ${{ steps.pip-cache.outputs.dir }}
+        key: ${{ runner.os }}-pip-py${{ matrix.python-version }}-${{ hashFiles('setup.cfg') }}
+        restore-keys: |
+          ${{ runner.os }}-pip-py${{ matrix.python-version }}-
+
+    - name: datasets cache
+      uses: actions/cache@v3
+      with:
+        path: $HOME/.cache/torchtext
+        key: ${{ runner.os }}-datasets
+        restore-keys: |
+          ${{ runner.os }}-datasets
+
+    - name: Install package & dependencies
+      env:
+        PACKAGE_NAME: ${{ matrix.pkg-name }}
+      run: |
+        pip install . --upgrade --extra-index-url https://download.pytorch.org/whl/cpu
+        pip list
+
+    - name: Testing
+      # NOTE: do not include coverage report here, see: https://github.com/nedbat/coveragepy/issues/1003
+      run: coverage run --source lai_textclf -m pytest tests -v --durations=50 --junitxml=results-${{ runner.os }}-py${{ matrix.python-version }}.xml
+
+    - name: Upload pytest results
+      if: failure()
+      uses: actions/upload-artifact@v3
+      with:
+        name: unittest-results-${{ runner.os }}-py${{ matrix.python-version }}-${{ matrix.requires }}-${{ matrix.release }}
+        path: results-${{ runner.os }}-py${{ matrix.python-version }}-${{ matrix.requires }}-${{ matrix.release }}.xml
+
+    - name: Statistics
+      if: success()
+      run: |
+        coverage report
+        coverage xml
