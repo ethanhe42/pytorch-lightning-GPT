@@ -1,10 +1,10 @@
 import math
+from operator import attrgetter
 
 import lightning as L
 
 import torch.nn as nn
 from torch.optim import AdamW
-from torch.
 
 import mingpt.model
 import mingpt.trainer
@@ -143,5 +143,23 @@ class FSDPGPT(GPT):
 
         return AdamW(optim_groups, lr=self.hparams.learning_rate, betas=self.hparams.betas)
 
-    # def configure_sharded_model(self) -> None:
-    #     self.mingpt = mingpt.model.GPT(self.mingpt_config)
+    def configure_sharded_model(self) -> None:
+        from torch.distributed.fsdp.wrap import wrap
+
+        _mingpt = mingpt.model.GPT(self.mingpt_config)
+        for n, m in _mingpt.named_modules():
+
+            # wrap instances of Block
+            if isinstance(m, mingpt.model.Block):
+                curr_module = _mingpt
+                _n = n.rsplit('.', 1)
+                # get the second to last module if nested
+                if len(_n) > 1:
+                    curr_module = attrgetter(_n[:-1])(curr_module)
+                # set the wrapped module to second to last
+                setattr(curr_module, _n[-1], wrap(m))
+
+        self.mingpt = _mingpt
+
+                
+
