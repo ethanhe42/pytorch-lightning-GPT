@@ -1,4 +1,5 @@
 import math
+import functools
 
 import lightning as L
 
@@ -135,12 +136,32 @@ class FSDPGPT(GPT):
     def __init__(self, offload=False, **kwargs):
         super().__init__(**kwargs)
         self.save_hyperparameters()
+        self._register_gpt_strategy()
+
 
     def configure_optimizers(self):
-        optimizer = self.mingpt.configure_optimizers(self.mingpt_trainer_config, self.trainer.model)
+        optimizer = self.mingpt.configure_optimizers(self.mingpt_trainer_config, model=self.trainer.model, multiple_optim_groups=False)
         optim_groups = optimizer.param_groups
 
         return AdamW(optim_groups, lr=self.hparams.learning_rate, betas=self.hparams.betas)
 
-    def configure_sharded_model(self) -> None:
-        self.mingpt = mingpt.model.GPT(self.mingpt_config)
+    @staticmethod
+    def _register_gpt_strategy():
+        from lightning.pytorch.strategies import StrategyRegistry
+        from lightning.pytorch.strategies.fully_sharded_native import DDPFullyShardedNativeStrategy
+        from torch.distributed.fsdp import BackwardPrefetch
+        from torch.distributed.fsdp.wrap import transformer_auto_wrap_policy
+
+
+        auto_wrap_policy = functools.partial(transformer_auto_wrap_policy, transformer_layer_cls={mingpt.model.Block})
+        StrategyRegistry.register(
+            name="fsdp-gpt",
+            strategy=DDPFullyShardedNativeStrategy,
+            description="FSDP strategy with memory optimizations enabled for GPT large scale pretraining.",
+            auto_wrap_policy=auto_wrap_policy,
+            activation_checkpointing=[mingpt.model.Block],
+            backward_prefetch=BackwardPrefetch.BACKWARD_PRE,
+        )
+
+                
+
