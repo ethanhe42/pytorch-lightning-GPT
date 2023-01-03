@@ -137,7 +137,7 @@ class FSDPGPT(GPT):
         self.save_hyperparameters()
 
     def configure_optimizers(self):
-        optimizer = self.mingpt.configure_optimizers(self.mingpt_trainer_config, self.trainer.model)
+        optimizer = self.mingpt.configure_optimizers(self.mingpt_trainer_config, model=self.trainer.model, multiple_optim_groups=False)
         optim_groups = optimizer.param_groups
 
         return AdamW(optim_groups, lr=self.hparams.learning_rate, betas=self.hparams.betas)
