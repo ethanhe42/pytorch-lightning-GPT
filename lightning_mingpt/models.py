@@ -156,7 +156,7 @@ class FSDPGPT(GPT):
                 # get the second to last module if nested
                 if len(_n) > 1:
                     print(n)
-                    curr_module = attrgetter(_n[:-1])(curr_module)
+                    curr_module = attrgetter(_n[0])(curr_module)
                 # set the wrapped module to second to last
                 setattr(curr_module, _n[-1], wrap(m))
 
