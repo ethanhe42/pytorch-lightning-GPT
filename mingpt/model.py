@@ -223,6 +223,7 @@ class GPT(nn.Module):
         """
         
         model = model or self
+        print('model', model)
 
         if multiple_optim_groups:
 
@@ -262,6 +263,8 @@ class GPT(nn.Module):
             ]
         else:
             optim_groups = [{"params": model.parameters(), "weight_decay": train_config.weight_decay}]
+
+        print(optim_groups)
 
         optimizer = torch.optim.AdamW(optim_groups, lr=train_config.learning_rate, betas=train_config.betas)
         return optimizer
