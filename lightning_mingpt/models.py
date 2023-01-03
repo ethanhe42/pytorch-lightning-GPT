@@ -4,6 +4,7 @@ import lightning as L
 
 import torch.nn as nn
 from torch.optim import AdamW
+from torch.
 
 import mingpt.model
 import mingpt.trainer
@@ -142,5 +143,5 @@ class FSDPGPT(GPT):
 
         return AdamW(optim_groups, lr=self.hparams.learning_rate, betas=self.hparams.betas)
 
-    def configure_sharded_model(self) -> None:
-        self.mingpt = mingpt.model.GPT(self.mingpt_config)
+    # def configure_sharded_model(self) -> None:
+    #     self.mingpt = mingpt.model.GPT(self.mingpt_config)
