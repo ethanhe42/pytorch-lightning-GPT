@@ -38,18 +38,18 @@ def main(args):
 
     if args.strategy == "deepspeed":
         if GPT_class == models.MinGPT:
-            GPT_class = models.DeepSpeed_MinGPT
+            GPT_class = models.DeepSpeedMinGPT
         elif GPT_class == models.NanoGPT:
-            GPT_class = models.DeepSpeed_NanoGPT
+            GPT_class = models.DeepSpeedNanoGPT
         else:
             raise ValueError(f"Implementation {args.implementation} not supported with DeepSpeed")
         extra_kwargs["offload"] = False
 
     elif args.strategy == "fsdp_native":
         if GPT_class == models.MinGPT:
-            GPT_class = models.FSDP_MinGPT
+            GPT_class = models.FSDPMinGPT
         elif GPT_class == models.NanoGPT:
-            GPT_class = models.FSDP_NanoGPT
+            GPT_class = models.FSDPNanoGPT
         else:
             raise ValueError(f"Implementation {args.implementation} not supported with FSDP")
 

@@ -8,10 +8,10 @@ There are currently a few options:
 
 - `MinGPT`: the GPT model from minGPT vanilla (set `--implementation=mingpt`)
 - `NanoGPT`: the GPT model from nanoGPT vanilla (set `--implementation=nanogpt`)
-- `DeepSpeed_MinGPT`: the GPT model from minGPT made DeepSpeed-ready (set `--strategy=deepspeed`)
-- `DeepSpeed_NanoGPT`: the GPT model from nanoGPT made DeepSpeed-ready (set `--strategy=deepspeed`)
-- `FSDP_MinGPT`: the GPT model from minGPT made FSDP (native)-ready (set `--strategy=fsdp_native`)
-- `FSDP_NanoGPT`: the GPT model from nanoGPT made FSDP (native)-ready (set `--strategy=fsdp_native`)
+- `DeepSpeedMinGPT`: the GPT model from minGPT made DeepSpeed-ready (set `--strategy=deepspeed`)
+- `DeepSpeedNanoGPT`: the GPT model from nanoGPT made DeepSpeed-ready (set `--strategy=deepspeed`)
+- `FSDPMinGPT`: the GPT model from minGPT made FSDP (native)-ready (set `--strategy=fsdp_native`)
+- `FSDPNanoGPT`: the GPT model from nanoGPT made FSDP (native)-ready (set `--strategy=fsdp_native`)
 
 minGPT and nanoGPT are vendored with the repo in the `mingpt` and `nanogpt` directories respectively. Find the respective LICENSE there.
 

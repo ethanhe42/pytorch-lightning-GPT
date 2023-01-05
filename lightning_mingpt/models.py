@@ -191,7 +191,7 @@ class NanoGPT(L.LightningModule):
         return self.nanogpt.generate(idx, max_new_tokens, temperature, top_k)
 
 
-class DeepSpeed_MinGPT(MinGPT):
+class DeepSpeedMinGPT(MinGPT):
     # TODO: activation checkpointing (requires overriding forward)
     def __init__(self, offload=False, **kwargs):
         super().__init__(**kwargs)
@@ -210,7 +210,7 @@ class DeepSpeed_MinGPT(MinGPT):
         self.mingpt = mingpt.model.GPT(self.mingpt_config)
 
 
-class FSDP_MinGPT(MinGPT):
+class FSDPMinGPT(MinGPT):
     def __init__(self, offload=False, **kwargs):
         super().__init__(**kwargs)
         self.save_hyperparameters()
@@ -240,7 +240,7 @@ class FSDP_MinGPT(MinGPT):
         )
 
 
-class DeepSpeed_NanoGPT(NanoGPT):
+class DeepSpeedNanoGPT(NanoGPT):
     # TODO: activation checkpointing (requires overriding forward)
     def __init__(self, offload=False, **kwargs):
         super().__init__(**kwargs)
@@ -259,7 +259,7 @@ class DeepSpeed_NanoGPT(NanoGPT):
         self.nanogpt = nanogpt.model.GPT(self.nanogpt_config)
 
 
-class FSDP_NanoGPT(NanoGPT):
+class FSDPNanoGPT(NanoGPT):
     def __init__(self, offload=False, **kwargs):
         super().__init__(**kwargs)
         self.save_hyperparameters()
