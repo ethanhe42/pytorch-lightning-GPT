@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 import glob
 import os
+from functools import partial
 from itertools import chain
 from typing import List, Tuple
 
@@ -20,8 +21,13 @@ def _load_requirements(path_dir: str, file_name: str = "requirements.txt", comme
     """Load requirements from a file.
     >>> _load_requirements(_PATH_ROOT)
     ['numpy...', 'torch..."]
+
     """
-    with open(os.path.join(path_dir, file_name)) as file:
+    if path_dir is None:
+        abs_file_path = file_name
+    else:
+        abs_file_path = os.path.join(path_dir, file_name)
+    with open(abs_file_path) as file:
         lines = [ln.strip() for ln in file.readlines()]
     reqs = []
     for ln in lines:
@@ -94,6 +100,8 @@ BASE_REQUIREMENTS = _load_requirements(path_dir=_PATH_ROOT, file_name="requireme
 def _prepare_extras(skip_files: Tuple[str] = ("devel.txt", "doctest.txt"), scandirs: Tuple[str] = (_PATH_REQUIRE, _PATH_TESTS)):
     # find all extra requirements
     found_req_files = []
+
+    _load_req = partial(_load_requirements, path_dir=None)
 
     for base_path in scandirs:
         found_req_files.extend(list(glob.glob(os.path.join(base_path, "*.txt"))))
