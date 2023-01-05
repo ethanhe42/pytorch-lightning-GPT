@@ -1,3 +1,4 @@
+from typing import Any, Tuple
 from urllib.request import urlopen
 
 import lightning as L
@@ -8,7 +9,7 @@ from lightning_mingpt import bench, data, models
 
 
 class FSDPMinGPTBench(bench.Bench):
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args: Any, **kwargs: Any):
         super().__init__(*args, **kwargs)
         self.num_workers = 4
         self.batch_size = 64
@@ -17,7 +18,7 @@ class FSDPMinGPTBench(bench.Bench):
         self.model_type = "gpt2"
         self.num_runs = 5
 
-    def create(self):
+    def create(self) -> Tuple[models.FSDPMinGPT, DataLoader]:
         torch.set_float32_matmul_precision("high")
 
         with urlopen("https://cs.stanford.edu/people/karpathy/char-rnn/shakespeare_input.txt") as f:
@@ -34,7 +35,7 @@ class FSDPMinGPTBench(bench.Bench):
 
         return model, dataloader
 
-    def train(self, model, dataloader):
+    def train(self, model: "L.LightningModule", dataloader: DataLoader) -> float:  # type: ignore
         trainer = L.Trainer(
             fast_dev_run=True,
             max_epochs=self.max_epochs,
@@ -54,7 +55,7 @@ class FSDPMinGPTBench(bench.Bench):
         final_loss = trainer.fit_loop.running_loss.last().item()
         return final_loss
 
-    def run(self):
+    def run(self) -> None:
         model, dataloader = self.create()
 
         self.run_benchmark(name="nocompile", fn=self.train, args=(model, dataloader), num_runs=self.num_runs)

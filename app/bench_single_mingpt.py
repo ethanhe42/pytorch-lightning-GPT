@@ -1,3 +1,4 @@
+from typing import Any, Optional, Tuple
 from urllib.request import urlopen
 
 import lightning as L
@@ -9,7 +10,7 @@ from lightning_mingpt import bench, data, models
 
 
 class GPTBench(bench.Bench):
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args: Any, **kwargs: Any):
         super().__init__(*args, **kwargs)
         self.num_workers = 0
         self.batch_size = 64
@@ -18,7 +19,7 @@ class GPTBench(bench.Bench):
         self.model_type = "gpt-micro"
         self.num_runs = 2
 
-    def create(self):
+    def create(self) -> Tuple[models.MinGPT, torch.utils.data.DataLoader]:
         torch.set_float32_matmul_precision("high")
         torch._dynamo.config.suppress_errors = True
 
@@ -36,7 +37,7 @@ class GPTBench(bench.Bench):
 
         return model, dataloader
 
-    def train(self, model, dataloader):
+    def train(self, model: "L.LightningModule", dataloader: torch.utils.data.DataLoader) -> Optional[float]:  # type: ignore
         trainer = L.Trainer(
             max_epochs=self.max_epochs,
             gradient_clip_val=1.0,
@@ -56,7 +57,7 @@ class GPTBench(bench.Bench):
         final_loss = trainer.fit_loop.running_loss.last()
         return final_loss.item() if final_loss is not None else None
 
-    def run(self):
+    def run(self) -> None:
         model, dataloader = self.create()
 
         self.run_benchmark(name="nocompile", fn=self.train, args=(model, dataloader), num_runs=self.num_runs)
