@@ -14,11 +14,13 @@ jobs:
   check-code:
     uses: Lightning-AI/utilities/.github/workflows/check-code.yml@v0.4.1
 
-#  check-package:
-#    uses: Lightning-AI/utilities/.github/workflows/check-package.yml@v0.4.1
-#    with:
-#      import-name: "lightning_mingpt"
-#      pypi-name: "lightning-mingpt"
-#      testing-matrix:
-#        - "os": ["ubuntu-20.04", "macos-11", "windows-2022"]
-#        - "python-version": ["3.8", "3.9"]
+ check-package:
+    uses: Lightning-AI/utilities/.github/workflows/check-package.yml@v0.5.0
+    with:
+      import-name: "lightning_mingpt"
+      pypi-name: "lightning-mingpt"
+      testing-matrix: |
+        {
+          "os": ["ubuntu-20.04", "macos-11", "windows-2022"],
+          "python-version": ["3.8", "3.10"]
+        }
