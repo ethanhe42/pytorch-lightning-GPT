@@ -1,15 +1,13 @@
-import math
 import functools
-
+from typing import Optional, Tuple
 import lightning as L
-
-import torch.nn as nn
+import torch
 from torch.optim import AdamW
 
 import mingpt.model
 import mingpt.trainer
+from mingpt.utils import CfgNode
 
-from lightning.pytorch.strategies import DeepSpeedStrategy
 from lightning.pytorch.strategies.deepspeed import _DEEPSPEED_AVAILABLE
 from lightning.pytorch.utilities.model_helpers import is_overridden
 
@@ -39,31 +37,31 @@ MINGPT_PRESETS = {
 }
 
 
-class GPT(L.LightningModule):
-    mingpt: nn.Module
+class GPT(L.LightningModule):  # type: ignore
+    mingpt: mingpt.model.GPT
 
     def __init__(
         self,
-        vocab_size,
-        block_size,
-        model_type="gpt2",
-        n_layer=None,
-        n_head=None,
-        n_embd=None,
-        embd_pdrop=0.1,
-        resid_pdrop=0.1,
-        attn_pdrop=0.1,
-        weight_decay=0.1,
-        learning_rate=3e-4,
-        betas=(0.9, 0.95),
-    ):
+        vocab_size: int,
+        block_size: int,
+        model_type: Optional[str]="gpt2",
+        n_layer: Optional[int]=None,
+        n_head:Optional[int]=None,
+        n_embd:Optional[int]=None,
+        embd_pdrop:float=0.1,
+        resid_pdrop:float=0.1,
+        attn_pdrop:float=0.1,
+        weight_decay:float=0.1,
+        learning_rate:float=3e-4,
+        betas:Tuple[float, float]=(0.9, 0.95),
+    ) -> None:
         super().__init__()
         self.save_hyperparameters()
         self.build_mingpt_configs()
-        if not is_overridden("configure_sharded_model", self, L.LightningModule):
+        if not is_overridden("configure_sharded_model", self, L.LightningModule):  # type: ignore
             self.mingpt = mingpt.model.GPT(self.mingpt_config)
 
-    def build_mingpt_configs(self):
+    def build_mingpt_configs(self) -> None:
         params = [
             self.hparams.n_layer,
             self.hparams.n_head,
@@ -92,34 +90,34 @@ class GPT(L.LightningModule):
         self.mingpt_trainer_config = mingpt.trainer.Trainer.get_default_config()
         self.merge_with_hparams(self.mingpt_trainer_config)
 
-    def merge_with_hparams(self, config):
+    def merge_with_hparams(self, config: CfgNode) -> None:
         keys = set(config.to_dict().keys())
         hparams = {k: v for k, v in self.hparams.items() if k in keys}
         config.merge_from_dict(hparams)
 
-    def forward(self, idx, targets=None):
+    def forward(self, idx: torch.Tensor, targets: Optional[torch.Tensor]=None)->Tuple[torch.Tensor, Optional[torch.Tensor]]:
         return self.mingpt(idx, targets)
 
-    def configure_optimizers(self):
+    def configure_optimizers(self) -> torch.optim.Optimizer:
         return self.mingpt.configure_optimizers(self.mingpt_trainer_config)
 
-    def training_step(self, batch, batch_idx):
+    def training_step(self, batch: Tuple[torch.Tensor, torch.Tensor], batch_idx: int) -> torch.Tensor:
         idx, targets = batch
         _, loss = self(idx, targets)
         self.log("train_loss", loss)
         return loss
 
-    def generate(self, idx, max_new_tokens, temperature=1.0, do_sample=False, top_k=None):
+    def generate(self, idx: torch.Tensor, max_new_tokens: int, temperature: float=1.0, do_sample: bool=False, top_k: Optional[int]=None) -> torch.Tensor:
         return self.mingpt.generate(idx, max_new_tokens, temperature, do_sample, top_k)
 
 
 class DeepSpeedGPT(GPT):
     # TODO: activation checkpointing (requires overriding forward)
-    def __init__(self, offload=False, **kwargs):
+    def __init__(self, offload: bool=False, **kwargs: Any):
         super().__init__(**kwargs)
         self.save_hyperparameters()
 
-    def configure_optimizers(self):
+    def configure_optimizers(self) -> torch.optim.Optimizer:
         optimizer = super().configure_optimizers()
         optim_groups = optimizer.param_groups
 
@@ -133,25 +131,26 @@ class DeepSpeedGPT(GPT):
 
 
 class FSDPGPT(GPT):
-    def __init__(self, offload=False, **kwargs):
+    def __init__(self, offload: bool=False, **kwargs: Any):
         super().__init__(**kwargs)
         self.save_hyperparameters()
         self._register_gpt_strategy()
 
+    def configure_optimizers(self) -> torch.optim.Optimizer:
+        optimizer = self.mingpt.configure_optimizers(
+            self.mingpt_trainer_config, model=self.trainer.model, multiple_optim_groups=False
+        )
 
-    def configure_optimizers(self):
-        optimizer = self.mingpt.configure_optimizers(self.mingpt_trainer_config, model=self.trainer.model, multiple_optim_groups=False)
         optim_groups = optimizer.param_groups
 
         return AdamW(optim_groups, lr=self.hparams.learning_rate, betas=self.hparams.betas)
 
     @staticmethod
-    def _register_gpt_strategy():
+    def _register_gpt_strategy() -> None:
         from lightning.pytorch.strategies import StrategyRegistry
         from lightning.pytorch.strategies.fully_sharded_native import DDPFullyShardedNativeStrategy
         from torch.distributed.fsdp import BackwardPrefetch
         from torch.distributed.fsdp.wrap import transformer_auto_wrap_policy
-
 
         auto_wrap_policy = functools.partial(transformer_auto_wrap_policy, transformer_layer_cls={mingpt.model.Block})
         StrategyRegistry.register(
@@ -162,6 +161,3 @@ class FSDPGPT(GPT):
             activation_checkpointing=[mingpt.model.Block],
             backward_prefetch=BackwardPrefetch.BACKWARD_PRE,
         )
-
-                
-
