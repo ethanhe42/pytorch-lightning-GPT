@@ -112,7 +112,7 @@ def _prepare_extras(skip_files: Tuple[str] = ("devel.txt", "doctest.txt"), scand
     found_req_names = [os.path.splitext(os.path.basename(req))[0] for req in found_req_files]
     # define basic and extra extras
     extras_req = {
-        name: _load_requirements(file_name=fname) for name, fname in zip(found_req_names, found_req_files) if _PATH_TESTS not in fname
+        name: _load_req(file_name=fname) for name, fname in zip(found_req_names, found_req_files) if _PATH_TESTS not in fname
     }
     for fname in found_req_files:
         if _PATH_TESTS in fname:
