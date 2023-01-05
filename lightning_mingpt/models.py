@@ -263,7 +263,7 @@ class FSDP_NanoGPT(NanoGPT):
     def __init__(self, offload=False, **kwargs):
         super().__init__(**kwargs)
         self.save_hyperparameters()
-        self._register_gpt_strategy()
+        _register_gpt_strategy()
 
     def configure_optimizers(self):
         optimizer = self.nanogpt.configure_optimizers(self.nanogpt_trainer_config, model=self.trainer.model, multiple_optim_groups=False)
