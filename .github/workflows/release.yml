@@ -54,13 +54,6 @@ jobs:
         path: dist
     - run: ls -lh dist/
 
-    - name: Upload to release
-      if: startsWith(github.event.ref, 'refs/tags') || github.event_name == 'release'
-      uses: AButler/upload-release-assets@v2.0
-      with:
-        files: 'dist/*'
-        repo-token: ${{ secrets.GITHUB_TOKEN }}
-
   publish-package:
     runs-on: ubuntu-20.04
     timeout-minutes: 10
