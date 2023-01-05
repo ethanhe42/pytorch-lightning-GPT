@@ -12,15 +12,15 @@ concurrency:
 
 jobs:
   check-code:
-    uses: Lightning-AI/utilities/.github/workflows/check-code.yml@v0.5.0
+    uses: ./.github/workflows/check-code.yml
 
   check-schema:
-    uses: Lightning-AI/utilities/.github/workflows/check-schema.yml@v0.5.0
+    uses: ./.github/workflows/tmp-check-schema.yml
     with:
       azure-dir: '' # disable azure checks
 
   check-package:
-    uses: Lightning-AI/utilities/.github/workflows/check-package.yml@v0.5.0
+    uses: ./.github/workflows/tmp-check-package.yml
     with:
       import-name: "lightning_mingpt"
       artifact-name: "lightning-mingpt"
