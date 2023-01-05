@@ -12,7 +12,7 @@ concurrency:
 
 jobs:
   check-code:
-    uses: ./.github/workflows/check-code.yml
+    uses: ./.github/workflows/tmp-check-code.yml
 
   check-schema:
     uses: ./.github/workflows/tmp-check-schema.yml
