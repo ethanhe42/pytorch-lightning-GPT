@@ -1,4 +1,3 @@
-import os
 from argparse import ArgumentParser
 from urllib.request import urlopen
 

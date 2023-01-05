@@ -3,7 +3,6 @@ from urllib.request import urlopen
 import lightning as L
 import torch
 import torch._dynamo
-from torch.utils.data import DataLoader
 
 from lightning_mingpt import bench, data, models
 

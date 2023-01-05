@@ -1,10 +1,9 @@
-import dataclasses
 import functools
-from typing import Optional, Tuple
+import warnings
+from typing import Any, Optional, Tuple
 
 import lightning as L
 import torch
-from lightning.pytorch.strategies import DeepSpeedStrategy
 from lightning.pytorch.strategies.deepspeed import _DEEPSPEED_AVAILABLE
 from lightning.pytorch.utilities.model_helpers import is_overridden
 from torch.optim import AdamW
@@ -120,7 +119,7 @@ class MinGPT(L.LightningModule):  # type: ignore
 
 
 class NanoGPT(L.LightningModule):
-    nanogpt: nn.Module
+    nanogpt: torch.nn.Module
 
     def __init__(
         self,
@@ -200,7 +199,7 @@ class DeepSpeedMinGPT(MinGPT):
     def __init__(self, fused_adam: bool = True, offload: bool = False, **kwargs):
         if fused_adam and offload:
             raise RuntimeError(
-                "Cannot use FusedAdam and CPUAdam at the same time! Please set either `fused_adam` or `offload` to False."
+                "Can't use Fused- and CPUAdam at the same time! Please set either `fused_adam` or `offload` to False."
             )
 
         super().__init__(**kwargs)
@@ -208,31 +207,19 @@ class DeepSpeedMinGPT(MinGPT):
 
     def configure_optimizers(self) -> torch.optim.Optimizer:
         optimizer = super().configure_optimizers()
-        optim_groups = optimizer.param_groups
-
-        # import locally because of https://github.com/Lightning-AI/lightning/pull/15610
-        if self.hparams.offload and _DEEPSPEED_AVAILABLE:
-            from deepspeed.ops.adam import DeepSpeedCPUAdam
-
-            return DeepSpeedCPUAdam(optim_groups, lr=self.hparams.learning_rate, betas=self.hparams.betas)
-
-        elif self.hparams.fused_adam and _DEEPSPEED_AVAILABLE:
-            from deepspeed.ops.adam import FusedAdam
-
-            return FusedAdam(optim_groups, lr=self.hparams.learning_rate, betas=self.hparams.betas)
-
-        elif self.hparams.fused_adam or self.hparams.offload:
-            warnings.warn(
-                "Deepspeed is not available, so cannot enable fused adam or cpu offloaded adam. Please install deepspeed!"
-            )
-
-        return optimizer
+        return _convert_optimizer_to_deepspeed(
+            optimizer,
+            self.hparams.fused_adam,
+            self.hparams.offload,
+            lr=self.hparams.learning_rate,
+            betas=self.hparams.betas,
+        )
 
     def configure_sharded_model(self) -> None:
         self.mingpt = mingpt.model.GPT(self.mingpt_config)
 
 
-class FSDPMinGPT(GPT):
+class FSDPMinGPT(MinGPT):
     def __init__(self, **kwargs: Any):
         super().__init__(**kwargs)
         self.save_hyperparameters()
@@ -250,18 +237,24 @@ class FSDPMinGPT(GPT):
 
 class DeepSpeedNanoGPT(NanoGPT):
     # TODO: activation checkpointing (requires overriding forward)
-    def __init__(self, offload=False, **kwargs):
+    def __init__(self, fused_adam: bool = True, offload: bool = False, **kwargs):
+        if fused_adam and offload:
+            raise RuntimeError(
+                "Can't use Fused- and CPUAdam at the same time! Please set either `fused_adam` or `offload` to False."
+            )
+
         super().__init__(**kwargs)
         self.save_hyperparameters()
 
     def configure_optimizers(self):
         optimizer = super().configure_optimizers()
-        optim_groups = optimizer.param_groups
-
-        if self.hparams.offload:
-            return DeepSpeedCPUAdam(optim_groups, lr=self.hparams.learning_rate, betas=self.hparams.betas)
-
-        return FusedAdam(optim_groups, lr=self.hparams.learning_rate, betas=self.hparams.betas)
+        return _convert_optimizer_to_deepspeed(
+            optimizer,
+            self.hparams.fused_adam,
+            self.hparams.offload,
+            lr=self.hparams.learning_rate,
+            betas=self.hparams.betas,
+        )
 
     def configure_sharded_model(self) -> None:
         self.nanogpt = nanogpt.model.GPT(self.nanogpt_config)
@@ -301,3 +294,24 @@ def _register_gpt_strategy():
         activation_checkpointing=[nanogpt.model.Block, mingpt.model.Block],
         backward_prefetch=BackwardPrefetch.BACKWARD_PRE,
     )
+
+
+def _convert_optimizer_to_deepspeed(optimizer: torch.optim.Optimizer, fused_adam: bool, cpu_offload: bool, **kwargs):
+    # import locally because of https://github.com/Lightning-AI/lightning/pull/15610
+    optim_groups = optimizer.param_groups
+    if cpu_offload and _DEEPSPEED_AVAILABLE:
+        from deepspeed.ops.adam import DeepSpeedCPUAdam
+
+        return DeepSpeedCPUAdam(optim_groups, **kwargs)
+
+    elif fused_adam and _DEEPSPEED_AVAILABLE:
+        from deepspeed.ops.adam import FusedAdam
+
+        return FusedAdam(optim_groups, **kwargs)
+
+    elif fused_adam or cpu_offload:
+        warnings.warn(
+            "Deepspeed is not available, so cannot enable fused adam or cpu offloaded adam. Please install deepspeed!"
+        )
+
+    return optimizer
