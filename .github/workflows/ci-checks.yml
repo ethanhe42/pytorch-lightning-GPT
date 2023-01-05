@@ -12,13 +12,18 @@ concurrency:
 
 jobs:
   check-code:
-    uses: Lightning-AI/utilities/.github/workflows/check-code.yml@v0.4.1
+    uses: Lightning-AI/utilities/.github/workflows/check-code.yml@v0.5.0
+
+  check-schema:
+    uses: Lightning-AI/utilities/.github/workflows/check-schema.yml@v0.5.0
+    with:
+      azure-dir: '' # disable azure checks
 
  check-package:
     uses: Lightning-AI/utilities/.github/workflows/check-package.yml@v0.5.0
     with:
       import-name: "lightning_mingpt"
-      pypi-name: "lightning-mingpt"
+      artifact-name: "lightning-mingpt"
       testing-matrix: |
         {
           "os": ["ubuntu-20.04", "macos-11", "windows-2022"],
