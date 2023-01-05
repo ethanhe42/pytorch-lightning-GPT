@@ -44,7 +44,7 @@ for the available flags.
 
 ## NanoGPT
 
-First install the dependencies
+First install the dependencies.
 
 ```shell
 pip install -r requirements.txt

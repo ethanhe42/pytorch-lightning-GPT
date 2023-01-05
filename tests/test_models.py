@@ -2,6 +2,7 @@ import lightning as L
 import torch
 
 import mingpt
+import nanogpt
 from lightning_mingpt import models
 
 
@@ -44,7 +45,7 @@ def test_nanogpt_vs_lightning_nanogpt():
 
     x = torch.randint(0, vocab_size, (1, 12))
 
-    mingpt_config = nano.model.GPTConfig()
+    mingpt_config = nanogpt.model.GPTConfig()
     mingpt_config.vocab_size = vocab_size
     mingpt_config.block_size = block_size
     mingpt_config.model_type = model_type
