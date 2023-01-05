@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 import glob
 import os
-from functools import partial
 from itertools import chain
 from typing import List, Tuple
 
@@ -94,23 +93,22 @@ BASE_REQUIREMENTS = _load_requirements(path_dir=_PATH_ROOT, file_name="requireme
 
 def _prepare_extras(skip_files: Tuple[str] = ("devel.txt", "doctest.txt"), scandirs: Tuple[str] = (_PATH_REQUIRE, _PATH_TESTS)):
     # find all extra requirements
-    _load_req = partial(_load_requirements, path_dir=_PATH_REQUIRE)
     found_req_files = []
 
     for base_path in scandirs:
-        found_req_files.extend(list(os.path.basename(p) for p in glob.glob(os.path.join(base_path, "*.txt"))))
+        found_req_files.extend(list(glob.glob(os.path.join(base_path, "*.txt"))))
 
     found_req_files = sorted(found_req_files)
     # filter unwanted files
     found_req_files = [n for n in found_req_files if n not in skip_files]
-    found_req_names = [os.path.splitext(req)[0] for req in found_req_files]
+    found_req_names = [os.path.splitext(os.path.basename(req))[0] for req in found_req_files]
     # define basic and extra extras
     extras_req = {
-        name: _load_req(file_name=fname) for name, fname in zip(found_req_names, found_req_files) if _PATH_TESTS not in fname
+        name: _load_requirements(file_name=fname) for name, fname in zip(found_req_names, found_req_files) if _PATH_TESTS not in fname
     }
     for fname in found_req_files:
         if _PATH_TESTS in fname:
-            extras_req["test"] += _load_req(file_name=fname)
+            extras_req["test"] += _load_requirements(file_name=fname)
     # filter the uniques
     extras_req = {n: list(set(req)) for n, req in extras_req.items()}
     # create an 'all' keyword that install all possible dependencies
