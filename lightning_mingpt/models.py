@@ -114,7 +114,7 @@ class DeepSpeedGPT(GPT):
     # TODO: activation checkpointing (requires overriding forward)
     def __init__(self, fused_adam: bool = True, offload: bool = False, **kwargs):
         if fused_adam and offload:
-            raise RuntimeError('Cannot use FusedAdam on cpu! Please choose one of them.')
+            raise RuntimeError('Cannot use FusedAdam and CPUAdam at the same time! Please set either `fused_adam` or `offload` to False.')
 
         super().__init__(**kwargs)
         self.save_hyperparameters()
