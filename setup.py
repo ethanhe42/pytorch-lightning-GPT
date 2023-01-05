@@ -112,11 +112,12 @@ def _prepare_extras(skip_files: Tuple[str] = ("devel.txt", "doctest.txt"), scand
     found_req_names = [os.path.splitext(os.path.basename(req))[0] for req in found_req_files]
     # define basic and extra extras
     extras_req = {
-        name: _load_req(file_name=fname) for name, fname in zip(found_req_names, found_req_files) if _PATH_TESTS not in fname
+        name: _load_req(file_name=fname) for name, fname in zip(found_req_names, found_req_files) if not str(fname).startswith(str(_PATH_TESTS))
     }
+    extras_req["test"] = []
     for fname in found_req_files:
-        if _PATH_TESTS in fname:
-            extras_req["test"] += _load_requirements(file_name=fname)
+        if str(fname).startswith(str(_PATH_TESTS)):
+            extras_req["test"] += _load_req(file_name=fname)
     # filter the uniques
     extras_req = {n: list(set(req)) for n, req in extras_req.items()}
     # create an 'all' keyword that install all possible dependencies
