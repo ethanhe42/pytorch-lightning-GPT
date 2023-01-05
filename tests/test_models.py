@@ -45,7 +45,9 @@ def test_nanogpt_vs_lightning_nanogpt():
 
     x = torch.randint(0, vocab_size, (1, 12))
 
-    nanogpt_config = nanogpt.model.GPTConfig()
+    nanogpt_config = nanogpt.model.GPTConfig(
+        **models.MINGPT_PRESETS[model_type]
+    )
     nanogpt_config.vocab_size = vocab_size
     nanogpt_config.block_size = block_size
     nanogpt_config.model_type = model_type

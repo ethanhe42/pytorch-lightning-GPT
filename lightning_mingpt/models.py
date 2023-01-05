@@ -1,4 +1,4 @@
-import math
+import dataclasses
 import functools
 
 import lightning as L
@@ -135,7 +135,7 @@ class NanoGPT(L.LightningModule):
         self.save_hyperparameters()
         self.build_nanogpt_configs()
         if not is_overridden("configure_sharded_model", self, L.LightningModule):
-            self.nano = nanogpt.model.GPT(self.nanogpt_config)
+            self.nanogpt = nanogpt.model.GPT(self.nanogpt_config)
 
     def build_nanogpt_configs(self):
         params = [
@@ -167,9 +167,9 @@ class NanoGPT(L.LightningModule):
         self.merge_with_hparams(self.nanogpt_trainer_config)
 
     def merge_with_hparams(self, config):
-        keys = set(config.to_dict().keys())
-        hparams = {k: v for k, v in self.hparams.items() if k in keys}
-        config.merge_from_dict(hparams)
+        for k, v in self.hparams.items():
+            if hasattr(config, k):
+                setattr(config, k, v)
 
     def forward(self, idx, targets=None):
         return self.nanogpt(idx, targets)
