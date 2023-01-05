@@ -42,7 +42,7 @@ def main(args):
         elif GPT_class == models.NanoGPT:
             GPT_class = models.DeepSpeed_NanoGPT
         else:
-            raise ValueError(f"NanoGPT not supported for deepspeed strategy")
+            raise ValueError(f"Implementation {args.implementation} not supported with DeepSpeed")
         extra_kwargs["offload"] = False
 
     elif args.strategy == "fsdp_native":
@@ -51,7 +51,7 @@ def main(args):
         elif GPT_class == models.NanoGPT:
             GPT_class = models.FSDP_NanoGPT
         else:
-            raise ValueError(f"NanoGPT not supported for deepspeed strategy")
+            raise ValueError(f"Implementation {args.implementation} not supported with FSDP")
 
     model = GPT_class(
         vocab_size=train_dataset.vocab_size,
