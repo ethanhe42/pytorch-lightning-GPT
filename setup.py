@@ -1,12 +1,20 @@
 #!/usr/bin/env python
+import glob
+import os
+from functools import partial
+from itertools import chain
+from typing import List, Tuple
 
 from setuptools import find_packages, setup
+from importlib.util import module_from_spec, spec_from_file_location
+import re
 
 PACKAGE_NAME = "lightning_mingpt"
 
 _PATH_ROOT = os.path.realpath(os.path.dirname(__file__))
-_PATH_SOURCE = os.path.join(_PATH_ROOT, "src")
+_PATH_SOURCE = _PATH_ROOT
 _PATH_REQUIRE = os.path.join(_PATH_ROOT, "requirements")
+_PATH_TESTS = os.path.join(_PATH_ROOT, 'tests')
 
 
 def _load_requirements(path_dir: str, file_name: str = "requirements.txt", comment_char: str = "#") -> List[str]:
@@ -84,19 +92,24 @@ LONG_DESCRIPTION = _load_readme_description(
 BASE_REQUIREMENTS = _load_requirements(path_dir=_PATH_ROOT, file_name="requirements.txt")
 
 
-def _prepare_extras(skip_files: Tuple[str] = ("devel.txt", "doctest.txt")):
+def _prepare_extras(skip_files: Tuple[str] = ("devel.txt", "doctest.txt"), scandirs: Tuple[str] = (_PATH_REQUIRE, _PATH_TESTS)):
     # find all extra requirements
     _load_req = partial(_load_requirements, path_dir=_PATH_REQUIRE)
-    found_req_files = sorted(os.path.basename(p) for p in glob.glob(os.path.join(_PATH_REQUIRE, "*.txt")))
+    found_req_files = []
+
+    for base_path in scandirs:
+        found_req_files.extend(list(os.path.basename(p) for p in glob.glob(os.path.join(base_path, "*.txt"))))
+
+    found_req_files = sorted(found_req_files)
     # filter unwanted files
     found_req_files = [n for n in found_req_files if n not in skip_files]
     found_req_names = [os.path.splitext(req)[0] for req in found_req_files]
     # define basic and extra extras
     extras_req = {
-        name: _load_req(file_name=fname) for name, fname in zip(found_req_names, found_req_files) if "_test" not in name
+        name: _load_req(file_name=fname) for name, fname in zip(found_req_names, found_req_files) if _PATH_TESTS not in fname
     }
-    for name, fname in zip(found_req_names, found_req_files):
-        if "_test" in name:
+    for fname in found_req_files:
+        if _PATH_TESTS in fname:
             extras_req["test"] += _load_req(file_name=fname)
     # filter the uniques
     extras_req = {n: list(set(req)) for n, req in extras_req.items()}
