@@ -1,27 +1,27 @@
 #!/usr/bin/env python
 import glob
 import os
+import re
 from functools import partial
+from importlib.util import module_from_spec, spec_from_file_location
 from itertools import chain
 from typing import List, Tuple
 
 from setuptools import find_packages, setup
-from importlib.util import module_from_spec, spec_from_file_location
-import re
 
 PACKAGE_NAME = "lightning_mingpt"
 
 _PATH_ROOT = os.path.realpath(os.path.dirname(__file__))
 _PATH_SOURCE = _PATH_ROOT
 _PATH_REQUIRE = os.path.join(_PATH_ROOT, "requirements")
-_PATH_TESTS = os.path.join(_PATH_ROOT, 'tests')
+_PATH_TESTS = os.path.join(_PATH_ROOT, "tests")
 
 
 def _load_requirements(path_dir: str, file_name: str = "requirements.txt", comment_char: str = "#") -> List[str]:
     """Load requirements from a file.
+
     >>> _load_requirements(_PATH_ROOT)
     ['numpy...', 'torch..."]
-
     """
     if path_dir is None:
         abs_file_path = file_name
@@ -45,6 +45,7 @@ def _load_requirements(path_dir: str, file_name: str = "requirements.txt", comme
 
 def _load_readme_description(path_dir: str, homepage: str, version: str) -> str:
     """Load readme as decribtion.
+
     >>> _load_readme_description(_PATH_ROOT, "",  "")
     '<div align="center">...'
     """
@@ -94,7 +95,9 @@ LONG_DESCRIPTION = _load_readme_description(
 BASE_REQUIREMENTS = _load_requirements(path_dir=_PATH_ROOT, file_name="requirements.txt")
 
 
-def _prepare_extras(skip_files: Tuple[str] = ("devel.txt", "doctest.txt"), scandirs: Tuple[str] = (_PATH_REQUIRE, _PATH_TESTS)):
+def _prepare_extras(
+    skip_files: Tuple[str] = ("devel.txt", "doctest.txt"), scandirs: Tuple[str] = (_PATH_REQUIRE, _PATH_TESTS)
+):
     # find all extra requirements
     found_req_files = []
 
@@ -109,7 +112,9 @@ def _prepare_extras(skip_files: Tuple[str] = ("devel.txt", "doctest.txt"), scand
     found_req_names = [os.path.splitext(os.path.basename(req))[0] for req in found_req_files]
     # define basic and extra extras
     extras_req = {
-        name: _load_req(file_name=fname) for name, fname in zip(found_req_names, found_req_files) if not str(fname).startswith(str(_PATH_TESTS))
+        name: _load_req(file_name=fname)
+        for name, fname in zip(found_req_names, found_req_files)
+        if not str(fname).startswith(str(_PATH_TESTS))
     }
     extras_req["test"] = []
     for fname in found_req_files:
@@ -121,6 +126,7 @@ def _prepare_extras(skip_files: Tuple[str] = ("devel.txt", "doctest.txt"), scand
     extras_req["all"] = list(chain([pkgs for k, pkgs in extras_req.items() if k not in ("test", "docs")]))
     extras_req["dev"] = extras_req["all"] + extras_req["test"]
     return extras_req
+
 
 # https://packaging.python.org/discussions/install-requires-vs-requirements /
 # keep the meta-data here for simplicity in reading this file... it's not obvious
@@ -138,8 +144,10 @@ if __name__ == "__main__":
         download_url=os.path.join(ABOUT_LIGHTNING_GPT.__homepage__, "archive", "main.zip"),
         license=ABOUT_LIGHTNING_GPT.__license__,
         # nanogpt is not yet configured as a package
-        packages=find_packages(exclude=["tests", "docs"]) + find_packages(where='./mingpt', exclude=['projects', 'tests']) + ['nanogpt'],
-        package_dir={'mingpt': './mingpt/mingpt'},
+        packages=find_packages(exclude=["tests", "docs"])
+        + find_packages(where="./mingpt", exclude=["projects", "tests"])
+        + ["nanogpt"],
+        package_dir={"mingpt": "./mingpt/mingpt"},
         long_description=LONG_DESCRIPTION,
         long_description_content_type="text/markdown",
         include_package_data=True,
@@ -175,4 +183,3 @@ if __name__ == "__main__":
             "Programming Language :: Python :: 3.10",
         ],
     )
-

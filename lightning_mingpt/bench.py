@@ -2,9 +2,8 @@ import gc
 import time
 from typing import Any, Callable, Dict, Iterable, List, Optional, Type, Union
 
-import torch
-
 import lightning as L
+import torch
 from lightning.app.components import LightningTrainerMultiNode
 
 
@@ -61,7 +60,15 @@ class Bench(L.LightningWork):  # type: ignore
         super().__init__(*args, **kwargs)
         self.results: Dict[str, Dict[str, Union[List[int], List[float]]]] = {}
 
-    def run_benchmark(self, name: str, fn: Callable, args: Optional[Iterable[Any]]=None, kwargs: Optional[Dict[str, Any]]=None, num_runs: int = 10, device_type: str = "auto") -> None:
+    def run_benchmark(
+        self,
+        name: str,
+        fn: Callable,
+        args: Optional[Iterable[Any]] = None,
+        kwargs: Optional[Dict[str, Any]] = None,
+        num_runs: int = 10,
+        device_type: str = "auto",
+    ) -> None:
         """Returns an array with the last loss from each epoch for each run."""
 
         if args is None:

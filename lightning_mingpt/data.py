@@ -3,9 +3,8 @@ import random
 from typing import Tuple, Union
 
 import torch
-from torch.utils.data import Dataset
-
 from lightning.pytorch.utilities import rank_zero_info
+from torch.utils.data import Dataset
 
 
 class CharDataset(Dataset):
@@ -32,8 +31,8 @@ class CharDataset(Dataset):
         y = torch.tensor(dix[1:], dtype=torch.long)
         return x, y
 
-    def to_tokens(self, message: str, device: Union[str, torch.device])->torch.Tensor :
+    def to_tokens(self, message: str, device: Union[str, torch.device]) -> torch.Tensor:
         return torch.tensor([self.stoi[s] for s in message], dtype=torch.long)[None, ...].to(device)
 
-    def from_tokens(self, tokens: torch.Tensor)-> str:
+    def from_tokens(self, tokens: torch.Tensor) -> str:
         return "".join([self.itos[int(i)] for i in tokens])

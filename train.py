@@ -1,13 +1,12 @@
-from argparse import ArgumentParser
 import os
+from argparse import ArgumentParser
 from urllib.request import urlopen
 
+import lightning as L
 import torch
 from torch.utils.data import DataLoader
 
-import lightning as L
-
-from lightning_mingpt import data, models, callbacks
+from lightning_mingpt import callbacks, data, models
 
 
 def main(args):
@@ -23,11 +22,13 @@ def main(args):
 
     if args.implementation == "mingpt":
         GPT_class = models.MinGPT
-        extra_kwargs.update(dict(
-            embd_pdrop=0.1,
-            resid_pdrop=0.1,
-            attn_pdrop=0.1,
-        ))
+        extra_kwargs.update(
+            dict(
+                embd_pdrop=0.1,
+                resid_pdrop=0.1,
+                attn_pdrop=0.1,
+            )
+        )
 
     elif args.implementation == "nanogpt":
         GPT_class = models.NanoGPT
@@ -87,7 +88,7 @@ def main(args):
         callbacks=callback_list,
         accelerator="auto",
         devices="auto",
-        precision=16
+        precision=16,
     )
 
     trainer.fit(model, train_loader)

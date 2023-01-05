@@ -1,11 +1,11 @@
 from urllib.request import urlopen
 
+import lightning as L
 import torch
 import torch._dynamo
 from torch.utils.data import DataLoader
 
-import lightning as L
-from lightning_mingpt import data, models, bench
+from lightning_mingpt import bench, data, models
 
 
 class GPTBench(bench.Bench):

@@ -19,7 +19,7 @@ jobs:
     with:
       azure-dir: '' # disable azure checks
 
- check-package:
+  check-package:
     uses: Lightning-AI/utilities/.github/workflows/check-package.yml@v0.5.0
     with:
       import-name: "lightning_mingpt"
