@@ -271,19 +271,19 @@ class FSDP_NanoGPT(NanoGPT):
 
         return AdamW(optim_groups, lr=self.hparams.learning_rate, betas=self.hparams.betas)
 
-    @staticmethod
-    def _register_gpt_strategy():
-        from lightning.pytorch.strategies import StrategyRegistry
-        from lightning.pytorch.strategies.fully_sharded_native import DDPFullyShardedNativeStrategy
-        from torch.distributed.fsdp import BackwardPrefetch
-        from torch.distributed.fsdp.wrap import transformer_auto_wrap_policy
 
-        auto_wrap_policy = functools.partial(transformer_auto_wrap_policy, transformer_layer_cls={nanogpt.model.Block})
-        StrategyRegistry.register(
-            name="fsdp-gpt",
-            strategy=DDPFullyShardedNativeStrategy,
-            description="FSDP strategy with memory optimizations enabled for GPT large scale pretraining.",
-            auto_wrap_policy=auto_wrap_policy,
-            activation_checkpointing=[nanogpt.model.Block],
-            backward_prefetch=BackwardPrefetch.BACKWARD_PRE,
-        )
+def _register_gpt_strategy():
+    from lightning.pytorch.strategies import StrategyRegistry
+    from lightning.pytorch.strategies.fully_sharded_native import DDPFullyShardedNativeStrategy
+    from torch.distributed.fsdp import BackwardPrefetch
+    from torch.distributed.fsdp.wrap import transformer_auto_wrap_policy
+
+    auto_wrap_policy = functools.partial(transformer_auto_wrap_policy, transformer_layer_cls={nanogpt.model.Block, mingpt.model.Block})
+    StrategyRegistry.register(
+        name="fsdp-gpt",
+        strategy=DDPFullyShardedNativeStrategy,
+        description="FSDP strategy with memory optimizations enabled for GPT large scale pretraining.",
+        auto_wrap_policy=auto_wrap_policy,
+        activation_checkpointing=[nanogpt.model.Block, mingpt.model.Block],
+        backward_prefetch=BackwardPrefetch.BACKWARD_PRE,
+    )
