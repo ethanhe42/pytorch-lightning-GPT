@@ -13,8 +13,6 @@ concurrency:
 jobs:
   check-code:
     uses: ./.github/workflows/tmp-check-code.yml
-    with:
-      actions-ref: ${{ github.sha }}  # use local version
 
   check-schema:
     uses: ./.github/workflows/tmp-check-schema.yml
@@ -24,7 +22,6 @@ jobs:
   check-package:
     uses: ./.github/workflows/tmp-check-package.yml
     with:
-      actions-ref: ${{ github.sha }}  # use local version
       import-name: "lightning_mingpt"
       artifact-name: "lightning-mingpt"
       testing-matrix: |

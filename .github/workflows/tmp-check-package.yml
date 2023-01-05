@@ -4,10 +4,6 @@ name: Check package flow
 on:
   workflow_call:
     inputs:
-      actions-ref:
-        description: 'Version of actions, normally the same as workflow'
-        required: true
-        type: string
       artifact-name:
         description: 'Unique name for collecting artifacts'
         required: true
