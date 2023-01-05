@@ -20,6 +20,15 @@ Thanks to:
 - @williamFalcon for the first Lightning port
 - @SeanNaren for the DeepSpeed pieces
 
+## Installation from source
+To clone the repository, please clone the repo with 
+```shell
+git clone https://github.com/Lightning-AI/lightning-minGPT
+git submodule update --init --recursive
+```
+
+After this you can proceed with the following steps.
+
 ## MinGPT
 
 First install the dependencies
