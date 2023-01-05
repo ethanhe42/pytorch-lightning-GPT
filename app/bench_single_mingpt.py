@@ -28,7 +28,7 @@ class GPTBench(bench.Bench):
         dataset = data.CharDataset(text, block_size=128)
         dataloader = DataLoader(dataset, batch_size=self.batch_size, num_workers=self.num_workers)
 
-        model = models.GPT(
+        model = models.MinGPT(
             vocab_size=dataset.vocab_size,
             block_size=dataset.block_size,
             model_type=self.model_type,

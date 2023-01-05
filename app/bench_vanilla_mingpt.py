@@ -6,7 +6,6 @@ from torch.utils.data import DataLoader
 
 import lightning as L
 from lightning_mingpt import data, models, bench
-from mingpt.model import GPT
 
 
 class GPTBench(bench.Bench):
@@ -28,7 +27,7 @@ class GPTBench(bench.Bench):
 
         dataset = data.CharDataset(text, block_size=128)
 
-        model = models.GPT(
+        model = models.MinGPT(
             vocab_size=dataset.vocab_size,
             block_size=dataset.block_size,
             model_type=self.model_type,

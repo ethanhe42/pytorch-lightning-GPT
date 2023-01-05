@@ -7,7 +7,7 @@ import lightning as L
 from lightning_mingpt import data, models, bench
 
 
-class FSDPGPTBench(bench.Bench):
+class FSDP_MinGPTBench(bench.Bench):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.num_workers = 4
@@ -26,7 +26,7 @@ class FSDPGPTBench(bench.Bench):
         dataset = data.CharDataset(text, block_size=128)
         dataloader = DataLoader(dataset, batch_size=self.batch_size, num_workers=self.num_workers)
 
-        model = models.GPT(
+        model = models.MinGPT(
             vocab_size=dataset.vocab_size,
             block_size=dataset.block_size,
             model_type=self.model_type,
@@ -67,7 +67,7 @@ class FSDPGPTBench(bench.Bench):
 
 app = L.LightningApp(
     bench.BenchRun(
-        FSDPGPTBench,
+        FSDP_MinGPTBench,
         num_nodes=2,
         cloud_compute=L.CloudCompute("gpu-fast"),
     )
