@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+import os
 
 from setuptools import find_packages, setup
 
@@ -6,6 +7,9 @@ PACKAGE_NAME = "lightning_mingpt"
 
 with open("requirements.txt") as f:
     requirements = f.read().splitlines()
+
+# update git submodules
+os.system('git submodule update --init --recursive')
 
 setup(
     name=PACKAGE_NAME,
