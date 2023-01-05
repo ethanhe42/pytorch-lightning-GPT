@@ -1,4 +1,4 @@
-import math
+import dataclasses
 import functools
 
 import lightning as L
@@ -8,6 +8,8 @@ from torch.optim import AdamW
 
 import mingpt.model
 import mingpt.trainer
+
+import nanogpt.model
 
 from lightning.pytorch.strategies import DeepSpeedStrategy
 from lightning.pytorch.strategies.deepspeed import _DEEPSPEED_AVAILABLE
@@ -39,7 +41,7 @@ MINGPT_PRESETS = {
 }
 
 
-class GPT(L.LightningModule):
+class MinGPT(L.LightningModule):
     mingpt: nn.Module
 
     def __init__(
@@ -113,7 +115,83 @@ class GPT(L.LightningModule):
         return self.mingpt.generate(idx, max_new_tokens, temperature, do_sample, top_k)
 
 
-class DeepSpeedGPT(GPT):
+class NanoGPT(L.LightningModule):
+    nanogpt: nn.Module
+
+    def __init__(
+        self,
+        vocab_size,
+        block_size,
+        model_type="gpt2",
+        n_layer=None,
+        n_head=None,
+        n_embd=None,
+        dropout=0.1,
+        weight_decay=0.1,
+        learning_rate=3e-4,
+        betas=(0.9, 0.95),
+    ):
+        super().__init__()
+        self.save_hyperparameters()
+        self.build_nanogpt_configs()
+        if not is_overridden("configure_sharded_model", self, L.LightningModule):
+            self.nanogpt = nanogpt.model.GPT(self.nanogpt_config)
+
+    def build_nanogpt_configs(self):
+        params = [
+            self.hparams.n_layer,
+            self.hparams.n_head,
+            self.hparams.n_embd,
+        ]
+
+        params_given = all([el is not None for el in params])
+        some_params_given = any([el is not None for el in params])
+
+        if some_params_given and not params_given:
+            raise ValueError(
+                "Please provide all values for n_layer, n_head, and n_embd, or just model_type."
+                f"Got n_layer={self.hparams.n_layer}, n_head={self.hparams.n_head}, "
+                f"and n_embd={self.hparams.n_embd}."
+            )
+
+        if not params_given:
+            # We take ownership of presets over minGPT here
+            preset = MINGPT_PRESETS[self.hparams.model_type]
+            self.hparams.update(preset)
+            self.hparams.model_type = None
+
+        self.nanogpt_config = nanogpt.model.GPTConfig()
+        self.merge_with_hparams(self.nanogpt_config)
+
+        self.nanogpt_trainer_config = mingpt.trainer.Trainer.get_default_config()
+        self.merge_with_hparams(self.nanogpt_trainer_config)
+
+    def merge_with_hparams(self, config):
+        for k, v in self.hparams.items():
+            if hasattr(config, k):
+                setattr(config, k, v)
+
+    def forward(self, idx, targets=None):
+        return self.nanogpt(idx, targets)
+
+    def configure_optimizers(self):
+        return self.nanogpt.configure_optimizers(
+            weight_decay=self.nanogpt_trainer_config.weight_decay,
+            learning_rate=self.nanogpt_trainer_config.learning_rate,
+            betas=self.nanogpt_trainer_config.betas
+        )
+
+    def training_step(self, batch, batch_idx):
+        idx, targets = batch
+        _, loss = self(idx, targets)
+        self.log("train_loss", loss)
+        return loss
+
+    def generate(self, idx, max_new_tokens, temperature=1.0, top_k=None):
+        return self.nanogpt.generate(idx, max_new_tokens, temperature, top_k)
+
+
+class DeepSpeedMinGPT(MinGPT):
     # TODO: activation checkpointing (requires overriding forward)
     def __init__(self, offload=False, **kwargs):
         super().__init__(**kwargs)
@@ -132,12 +210,11 @@ class DeepSpeedGPT(GPT):
         self.mingpt = mingpt.model.GPT(self.mingpt_config)
 
 
-class FSDPGPT(GPT):
+class FSDPMinGPT(MinGPT):
     def __init__(self, offload=False, **kwargs):
         super().__init__(**kwargs)
         self.save_hyperparameters()
-        self._register_gpt_strategy()
-
+        _register_gpt_strategy()
 
     def configure_optimizers(self):
         optimizer = self.mingpt.configure_optimizers(self.mingpt_trainer_config, model=self.trainer.model, multiple_optim_groups=False)
@@ -145,23 +222,51 @@ class FSDPGPT(GPT):
 
         return AdamW(optim_groups, lr=self.hparams.learning_rate, betas=self.hparams.betas)
 
-    @staticmethod
-    def _register_gpt_strategy():
-        from lightning.pytorch.strategies import StrategyRegistry
-        from lightning.pytorch.strategies.fully_sharded_native import DDPFullyShardedNativeStrategy
-        from torch.distributed.fsdp import BackwardPrefetch
-        from torch.distributed.fsdp.wrap import transformer_auto_wrap_policy
+
+class DeepSpeedNanoGPT(NanoGPT):
+    # TODO: activation checkpointing (requires overriding forward)
+    def __init__(self, offload=False, **kwargs):
+        super().__init__(**kwargs)
+        self.save_hyperparameters()
+
+    def configure_optimizers(self):
+        optimizer = super().configure_optimizers()
+        optim_groups = optimizer.param_groups
+
+        if self.hparams.offload:
+            return DeepSpeedCPUAdam(optim_groups, lr=self.hparams.learning_rate, betas=self.hparams.betas)
+
+        return FusedAdam(optim_groups, lr=self.hparams.learning_rate, betas=self.hparams.betas)
+
+    def configure_sharded_model(self) -> None:
+        self.nanogpt = nanogpt.model.GPT(self.nanogpt_config)
 
 
-        auto_wrap_policy = functools.partial(transformer_auto_wrap_policy, transformer_layer_cls={mingpt.model.Block})
-        StrategyRegistry.register(
-            name="fsdp-gpt",
-            strategy=DDPFullyShardedNativeStrategy,
-            description="FSDP strategy with memory optimizations enabled for GPT large scale pretraining.",
-            auto_wrap_policy=auto_wrap_policy,
-            activation_checkpointing=[mingpt.model.Block],
-            backward_prefetch=BackwardPrefetch.BACKWARD_PRE,
-        )
+class FSDPNanoGPT(NanoGPT):
+    def __init__(self, offload=False, **kwargs):
+        super().__init__(**kwargs)
+        self.save_hyperparameters()
+        _register_gpt_strategy()
 
-                
+    def configure_optimizers(self):
+        optimizer = self.nanogpt.configure_optimizers(self.nanogpt_trainer_config, model=self.trainer.model, multiple_optim_groups=False)
+        optim_groups = optimizer.param_groups
 
+        return AdamW(optim_groups, lr=self.hparams.learning_rate, betas=self.hparams.betas)
+
+
+def _register_gpt_strategy():
+    from lightning.pytorch.strategies import StrategyRegistry
+    from lightning.pytorch.strategies.fully_sharded_native import DDPFullyShardedNativeStrategy
+    from torch.distributed.fsdp import BackwardPrefetch
+    from torch.distributed.fsdp.wrap import transformer_auto_wrap_policy
+
+    auto_wrap_policy = functools.partial(transformer_auto_wrap_policy, transformer_layer_cls={nanogpt.model.Block, mingpt.model.Block})
+    StrategyRegistry.register(
+        name="fsdp-gpt",
+        strategy=DDPFullyShardedNativeStrategy,
+        description="FSDP strategy with memory optimizations enabled for GPT large scale pretraining.",
+        auto_wrap_policy=auto_wrap_policy,
+        activation_checkpointing=[nanogpt.model.Block, mingpt.model.Block],
+        backward_prefetch=BackwardPrefetch.BACKWARD_PRE,
+    )

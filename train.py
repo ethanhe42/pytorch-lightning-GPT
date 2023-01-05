@@ -22,17 +22,36 @@ def main(args):
     extra_kwargs = {}
 
     if args.implementation == "mingpt":
-        GPT_class = models.GPT
+        GPT_class = models.MinGPT
+        extra_kwargs.update(dict(
+            embd_pdrop=0.1,
+            resid_pdrop=0.1,
+            attn_pdrop=0.1,
+        ))
+
+    elif args.implementation == "nanogpt":
+        GPT_class = models.NanoGPT
+        extra_kwargs["dropout"] = 0.1
 
     else:
         raise ValueError(f"Unsupported implementation {args.implementation}")
 
     if args.strategy == "deepspeed":
-        GPT_class = models.DeepSpeedGPT
+        if GPT_class == models.MinGPT:
+            GPT_class = models.DeepSpeedMinGPT
+        elif GPT_class == models.NanoGPT:
+            GPT_class = models.DeepSpeedNanoGPT
+        else:
+            raise ValueError(f"Implementation {args.implementation} not supported with DeepSpeed")
         extra_kwargs["offload"] = False
 
     elif args.strategy == "fsdp_native":
-        GPT_class = models.FSDPGPT
+        if GPT_class == models.MinGPT:
+            GPT_class = models.FSDPMinGPT
+        elif GPT_class == models.NanoGPT:
+            GPT_class = models.FSDPNanoGPT
+        else:
+            raise ValueError(f"Implementation {args.implementation} not supported with FSDP")
 
     model = GPT_class(
         vocab_size=train_dataset.vocab_size,
@@ -41,9 +60,6 @@ def main(args):
         n_layer=args.n_layer,
         n_head=args.n_head,
         n_embd=args.n_embd,
-        embd_pdrop=0.1,
-        resid_pdrop=0.1,
-        attn_pdrop=0.1,
         weight_decay=0.1,
         learning_rate=args.learning_rate,
         betas=(0.9, 0.95),
@@ -97,7 +113,7 @@ if __name__ == "__main__":
     parser.add_argument("--batch_size", default=64, type=int)
     parser.add_argument("--num_workers", default=4, type=int)
     parser.add_argument("--compile", default=None, choices=[None, "dynamo"])
-    parser.add_argument("--implementation", default="mingpt", choices=["mingpt"])
+    parser.add_argument("--implementation", default="mingpt", choices=["mingpt", "nanogpt"])
     args = parser.parse_args()
 
     main(args)
