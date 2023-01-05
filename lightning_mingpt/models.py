@@ -118,29 +118,29 @@ class MinGPT(L.LightningModule):  # type: ignore
         return self.mingpt.generate(idx, max_new_tokens, temperature, do_sample, top_k)
 
 
-class NanoGPT(L.LightningModule):
-    nanogpt: torch.nn.Module
+class NanoGPT(L.LightningModule):  # type: ignore
+    nanogpt: nanogpt.model.GPT
 
     def __init__(
         self,
-        vocab_size,
-        block_size,
-        model_type="gpt2",
-        n_layer=None,
-        n_head=None,
-        n_embd=None,
-        dropout=0.1,
-        weight_decay=0.1,
-        learning_rate=3e-4,
-        betas=(0.9, 0.95),
+        vocab_size: int,
+        block_size: int,
+        model_type: Optional[str] = "gpt2",
+        n_layer: Optional[int] = None,
+        n_head: Optional[int] = None,
+        n_embd: Optional[int] = None,
+        dropout: float = 0.1,
+        weight_decay: float = 0.1,
+        learning_rate: float = 3e-4,
+        betas: Tuple[float, float] = (0.9, 0.95),
     ):
         super().__init__()
         self.save_hyperparameters()
         self.build_nanogpt_configs()
-        if not is_overridden("configure_sharded_model", self, L.LightningModule):
+        if not is_overridden("configure_sharded_model", self, L.LightningModule):  # type: ignore
             self.nanogpt = nanogpt.model.GPT(self.nanogpt_config)
 
-    def build_nanogpt_configs(self):
+    def build_nanogpt_configs(self) -> None:
         params = [
             self.hparams.n_layer,
             self.hparams.n_head,
@@ -169,34 +169,36 @@ class NanoGPT(L.LightningModule):
         self.nanogpt_trainer_config = mingpt.trainer.Trainer.get_default_config()
         self.merge_with_hparams(self.nanogpt_trainer_config)
 
-    def merge_with_hparams(self, config):
+    def merge_with_hparams(self, config: CfgNode) -> None:
         for k, v in self.hparams.items():
             if hasattr(config, k):
                 setattr(config, k, v)
 
-    def forward(self, idx, targets=None):
+    def forward(self, idx: torch.Tensor, targets: Optional[torch.Tensor] = None) -> torch.Tensor:
         return self.nanogpt(idx, targets)
 
-    def configure_optimizers(self):
+    def configure_optimizers(self) -> torch.optim.Optimizer:
         return self.nanogpt.configure_optimizers(
             weight_decay=self.nanogpt_trainer_config.weight_decay,
             learning_rate=self.nanogpt_trainer_config.learning_rate,
             betas=self.nanogpt_trainer_config.betas,
         )
 
-    def training_step(self, batch, batch_idx):
+    def training_step(self, batch: torch.Tensor, batch_idx: int) -> torch.Tensor:
         idx, targets = batch
         _, loss = self(idx, targets)
         self.log("train_loss", loss)
         return loss
 
-    def generate(self, idx, max_new_tokens, temperature=1.0, top_k=None):
+    def generate(
+        self, idx: torch.Tensor, max_new_tokens: int, temperature: float = 1.0, top_k: Optional[int] = None
+    ) -> torch.Tensor:
         return self.nanogpt.generate(idx, max_new_tokens, temperature, top_k)
 
 
 class DeepSpeedMinGPT(MinGPT):
     # TODO: activation checkpointing (requires overriding forward)
-    def __init__(self, fused_adam: bool = True, offload: bool = False, **kwargs):
+    def __init__(self, fused_adam: bool = True, offload: bool = False, **kwargs: Any):
         if fused_adam and offload:
             raise RuntimeError(
                 "Can't use Fused- and CPUAdam at the same time! Please set either `fused_adam` or `offload` to False."
@@ -237,7 +239,7 @@ class FSDPMinGPT(MinGPT):
 
 class DeepSpeedNanoGPT(NanoGPT):
     # TODO: activation checkpointing (requires overriding forward)
-    def __init__(self, fused_adam: bool = True, offload: bool = False, **kwargs):
+    def __init__(self, fused_adam: bool = True, offload: bool = False, **kwargs: Any):
         if fused_adam and offload:
             raise RuntimeError(
                 "Can't use Fused- and CPUAdam at the same time! Please set either `fused_adam` or `offload` to False."
@@ -246,7 +248,7 @@ class DeepSpeedNanoGPT(NanoGPT):
         super().__init__(**kwargs)
         self.save_hyperparameters()
 
-    def configure_optimizers(self):
+    def configure_optimizers(self) -> torch.optim.Optimizer:
         optimizer = super().configure_optimizers()
         return _convert_optimizer_to_deepspeed(
             optimizer,
@@ -261,12 +263,12 @@ class DeepSpeedNanoGPT(NanoGPT):
 
 
 class FSDPNanoGPT(NanoGPT):
-    def __init__(self, **kwargs):
+    def __init__(self, **kwargs: Any):
         super().__init__(**kwargs)
         self.save_hyperparameters()
         _register_gpt_strategy()
 
-    def configure_optimizers(self):
+    def configure_optimizers(self) -> torch.optim.Optimizer:
         optimizer = self.nanogpt.configure_optimizers(
             self.nanogpt_trainer_config, model=self.trainer.model, multiple_optim_groups=False
         )
@@ -275,7 +277,7 @@ class FSDPNanoGPT(NanoGPT):
         return AdamW(optim_groups, lr=self.hparams.learning_rate, betas=self.hparams.betas)
 
 
-def _register_gpt_strategy():
+def _register_gpt_strategy() -> None:
     from lightning.pytorch.strategies import StrategyRegistry
     from lightning.pytorch.strategies.fully_sharded_native import (
         DDPFullyShardedNativeStrategy,
@@ -296,7 +298,9 @@ def _register_gpt_strategy():
     )
 
 
-def _convert_optimizer_to_deepspeed(optimizer: torch.optim.Optimizer, fused_adam: bool, cpu_offload: bool, **kwargs):
+def _convert_optimizer_to_deepspeed(
+    optimizer: torch.optim.Optimizer, fused_adam: bool, cpu_offload: bool, **kwargs: Any
+) -> torch.optim.Optimizer:
     # import locally because of https://github.com/Lightning-AI/lightning/pull/15610
     optim_groups = optimizer.param_groups
     if cpu_offload and _DEEPSPEED_AVAILABLE:
