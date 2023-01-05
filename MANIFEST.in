@@ -8,12 +8,15 @@ include *.md
 
 # Include the license file
 include LICENSE
+recursive-include lightning_mingpt *LICENSE
+recursive-include mingpt *LICENSE
+
 
 # Include Citation file
 include *.cff
 
 # Include marker file for PEP 561
-recursive-include src *.typed
+recursive-include lightning_mingpt *.typed
 
 exclude *.sh
 exclude *.toml
