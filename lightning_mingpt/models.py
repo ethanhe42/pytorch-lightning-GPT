@@ -13,9 +13,6 @@ from lightning.pytorch.strategies import DeepSpeedStrategy
 from lightning.pytorch.strategies.deepspeed import _DEEPSPEED_AVAILABLE
 from lightning.pytorch.utilities.model_helpers import is_overridden
 
-if _DEEPSPEED_AVAILABLE:
-    from deepspeed.ops.adam import DeepSpeedCPUAdam, FusedAdam
-
 
 MINGPT_PRESETS = {
     # names follow the huggingface naming conventions
@@ -115,7 +112,10 @@ class GPT(L.LightningModule):
 
 class DeepSpeedGPT(GPT):
     # TODO: activation checkpointing (requires overriding forward)
-    def __init__(self, offload=False, **kwargs):
+    def __init__(self, fused_adam: bool = True, offload: bool = False, **kwargs):
+        if fused_adam and offload:
+            raise RuntimeError('Cannot use FusedAdam on cpu! Please choose one of them.')
+
         super().__init__(**kwargs)
         self.save_hyperparameters()
 
@@ -123,10 +123,19 @@ class DeepSpeedGPT(GPT):
         optimizer = super().configure_optimizers()
         optim_groups = optimizer.param_groups
 
-        if self.hparams.offload:
+        # import locally because of https://github.com/Lightning-AI/lightning/pull/15610
+        if self.hparams.offload and _DEEPSPEED_AVAILABLE:
+            from deepspeed.ops.adam import DeepSpeedCPUAdam
             return DeepSpeedCPUAdam(optim_groups, lr=self.hparams.learning_rate, betas=self.hparams.betas)
 
-        return FusedAdam(optim_groups, lr=self.hparams.learning_rate, betas=self.hparams.betas)
+        elif self.hparams.fused_adam and _DEEPSPEED_AVAILABLE:
+            from deepspeed.ops.adam import FusedAdam
+            return FusedAdam(optim_groups, lr=self.hparams.learning_rate, betas=self.hparams.betas)
+
+        elif self.hparams.fused_adam or self.hparams.offload:
+            warnings.warn('Deepspeed is not available, so cannot enable fused adam or cpu offloaded adam. Please install deepspeed!')
+
+        return optimizer
 
     def configure_sharded_model(self) -> None:
         self.mingpt = mingpt.model.GPT(self.mingpt_config)
