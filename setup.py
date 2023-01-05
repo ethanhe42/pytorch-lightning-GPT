@@ -6,7 +6,7 @@ PACKAGE_NAME = "lightning_mingpt"
 
 with open("requirements.txt") as f:
     requirements = f.read().splitlines()
-
+print(find_packages(exclude=["tests", "docs"]) + find_packages('mingpt', exclude=['projects', 'tests']) + ['nanogpt'])
 setup(
     name=PACKAGE_NAME,
     version="0.0.1",
@@ -14,7 +14,8 @@ setup(
     author="",
     author_email="",
     url="",
-    packages=find_packages(exclude=["tests", "docs"]),
+    # nanogpt is not yet configured as a package
+    packages=find_packages(exclude=["tests", "docs"]) + find_packages('mingpt', exclude=['projects', 'tests']) + ['nanogpt'],
     long_description="",
     long_description_content_type="text/markdown",
     include_package_data=True,

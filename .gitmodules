@@ -1,0 +1,6 @@
+[submodule "nanogpt"]
+	path = nanogpt
+	url = https://github.com/karpathy/nanoGPT
+[submodule "mingpt"]
+	path = mingpt
+	url = https://github.com/karpathy/minGPT
