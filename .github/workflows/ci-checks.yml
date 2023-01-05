@@ -13,6 +13,8 @@ concurrency:
 jobs:
   check-code:
     uses: ./.github/workflows/tmp-check-code.yml
+    with:
+      actions-ref: ${{ github.sha }}  # use local version
 
   check-schema:
     uses: ./.github/workflows/tmp-check-schema.yml
