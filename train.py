@@ -5,7 +5,7 @@ import lightning as L
 import torch
 from torch.utils.data import DataLoader
 
-from lightning_mingpt import callbacks, data, models
+from lightning_gpt import callbacks, data, models
 
 
 def main(args):

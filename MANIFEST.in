@@ -10,13 +10,13 @@ include *.md
 
 # Include the license file
 include LICENSE
-recursive-include lightning_mingpt *LICENSE
+recursive-include lightning_gpt *LICENSE
 
 # Include Citation file
 include *.cff
 
 # Include marker file for PEP 561
-recursive-include lightning_mingpt *.typed
+recursive-include lightning_gpt *.typed
 
 exclude *.sh
 exclude *.toml

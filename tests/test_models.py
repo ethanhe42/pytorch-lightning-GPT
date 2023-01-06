@@ -4,7 +4,7 @@ import torch
 
 import mingpt
 import nanogpt
-from lightning_mingpt import models
+from lightning_gpt import models
 
 
 def test_mingpt_vs_lightning_mingpt():

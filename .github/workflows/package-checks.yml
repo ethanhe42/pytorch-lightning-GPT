@@ -38,7 +38,7 @@ jobs:
         run: twine check dist/*
 
       - name: Install and Check Package Wheel
-        run: pip install ./dist/*.whl && python -c "import lightning_mingpt; print(lightning_mingpt.__version__); import mingpt.model; import nanogpt.model"
+        run: pip install ./dist/*.whl && python -c "import lightning_gpt; print(lightning_gpt.__version__); import mingpt.model; import nanogpt.model"
 
       - name: Install and Check Package Source Distribution
-        run: pip install ./dist/*.tar.gz --force-reinstall && python -c "import lightning_mingpt; print(lightning_mingpt.__version__); import mingpt.model; import nanogpt.model"
+        run: pip install ./dist/*.tar.gz --force-reinstall && python -c "import lightning_gpt; print(lightning_gpt.__version__); import mingpt.model; import nanogpt.model"

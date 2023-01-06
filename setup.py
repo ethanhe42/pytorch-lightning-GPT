@@ -9,7 +9,7 @@ from typing import List, Tuple
 
 from setuptools import find_packages, setup
 
-PACKAGE_NAME = "lightning_mingpt"
+PACKAGE_NAME = "lightning_gpt"
 
 _PATH_ROOT = os.path.realpath(os.path.dirname(__file__))
 _PATH_SOURCE = _PATH_ROOT
@@ -78,7 +78,7 @@ def _load_readme_description(path_dir: str, homepage: str, version: str) -> str:
     return text
 
 
-def _load_py_module(fname, pkg="lightning_mingpt"):
+def _load_py_module(fname, pkg="lightning_gpt"):
     spec = spec_from_file_location(os.path.join(pkg, fname), os.path.join(_PATH_SOURCE, pkg, fname))
     py = module_from_spec(spec)
     spec.loader.exec_module(py)

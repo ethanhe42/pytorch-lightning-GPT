@@ -4,7 +4,7 @@ target-version = ['py38', 'py39', 'py310']
 
 [tool.mypy]
 files = [
-    "lightning_mingpt/*.py",
+    "lightning_gpt/*.py",
     "app/*.py",
 ]
 # This section is for folders with "-" as they are not valid python modules

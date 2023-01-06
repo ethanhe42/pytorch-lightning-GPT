@@ -15,6 +15,8 @@ jobs:
     timeout-minutes: 10
     steps:
     - uses: actions/checkout@v3
+      with:
+        submodules: recursive
     - uses: actions/setup-python@v4
       with:
         python-version: 3.8
@@ -32,10 +34,10 @@ jobs:
       run: twine check dist/*
 
     - name: Install and Check Package Wheel
-      run: pip install ./dist/*.whl && python -c "import lightning_mingpt; print(lightning_mingpt.__version__); import mingpt.model; import nanogpt.model"
+      run: pip install ./dist/*.whl && python -c "import lightning_gpt; print(lightning_gpt.__version__); import mingpt.model; import nanogpt.model"
 
     - name: Install and Check Package Source Distribution
-      run: pip install ./dist/*.tar.gz --force-reinstall && python -c "import lightning_mingpt; print(lightning_mingpt.__version__); import mingpt.model; import nanogpt.model"
+      run: pip install ./dist/*.tar.gz --force-reinstall && python -c "import lightning_gpt; print(lightning_gpt.__version__); import mingpt.model; import nanogpt.model"
 
     - uses: actions/upload-artifact@v3
       with:
@@ -48,6 +50,8 @@ jobs:
     needs: build-package
     steps:
     - uses: actions/checkout@v3
+      with:
+        submodules: recursive
     - uses: actions/download-artifact@v3
       with:
         name: pypi-packages-${{ github.sha }}
@@ -60,6 +64,8 @@ jobs:
     needs: build-package
     steps:
     - uses: actions/checkout@v3
+      with:
+        submodules: recursive
     - uses: actions/download-artifact@v3
       with:
         name: pypi-packages-${{ github.sha }}
