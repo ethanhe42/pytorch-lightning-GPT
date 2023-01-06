@@ -1,10 +1,10 @@
 import lightning as L
+import pytest
 import torch
 
 import mingpt
 import nanogpt
 from lightning_mingpt import models
-import pytest
 
 
 def test_mingpt_vs_lightning_mingpt():
@@ -62,26 +62,49 @@ def test_nanogpt_vs_lightning_nanogpt():
 
     torch.testing.assert_close(nanogpt_y, lit_y)
 
+
 def _get_dummy_data(vocabsize):
     data = [[torch.randint(0, vocabsize, (12,)) for _ in range(2)] for _ in range(10)]
     return torch.utils.data.DataLoader(data)
 
-def _get_minimal_gpt_config():
-    return {"vocab_size": 65, "block_size": 128, "model_type": 'gpt-nano'}
 
-@pytest.mark.parametrize('model_cls', [models.MinGPT, models.DeepSpeedMinGPT, models.FSDPMinGPT, models.NanoGPT, models.DeepSpeedNanoGPT, models.FSDPNanoGPT])
+def _get_minimal_gpt_config():
+    return {"vocab_size": 65, "block_size": 128, "model_type": "gpt-nano"}
+
+
+@pytest.mark.parametrize(
+    "model_cls",
+    [
+        models.MinGPT,
+        models.DeepSpeedMinGPT,
+        models.FSDPMinGPT,
+        models.NanoGPT,
+        models.DeepSpeedNanoGPT,
+        models.FSDPNanoGPT,
+    ],
+)
 def test_model_instatiation_base_strategy(tmpdir, model_cls):
-    trainer = L.pytorch.Trainer(limit_train_batches=2, limit_val_batches=2, max_epochs=1, logger=False, enable_checkpointing=False, default_root_dir=tmpdir)
+    trainer = L.pytorch.Trainer(
+        limit_train_batches=2,
+        limit_val_batches=2,
+        max_epochs=1,
+        logger=False,
+        enable_checkpointing=False,
+        default_root_dir=tmpdir,
+    )
     gpt_config = _get_minimal_gpt_config()
 
-    if 'deepspeed' in model_cls.__qualname__.lower():
+    if "deepspeed" in model_cls.__qualname__.lower():
         gpt_config.update(fused_adam=False, offload=False)
     mingpt = model_cls(**gpt_config)
-    dataloader_train = _get_dummy_data(gpt_config['vocab_size'])
+    dataloader_train = _get_dummy_data(gpt_config["vocab_size"])
     trainer.fit(mingpt, dataloader_train)
-    
 
-@pytest.mark.parametrize('model_cls', [models.DeepSpeedMinGPT, models.DeepSpeedNanoGPT])
+
+@pytest.mark.parametrize("model_cls", [models.DeepSpeedMinGPT, models.DeepSpeedNanoGPT])
 def test_model_instantiation_error_deepspeed(model_cls):
-    with pytest.raises(RuntimeError, match='Cannot use FusedAdam and CPUAdam at the same time! Please set either `fused_adam` or `offload` to False.'):
+    with pytest.raises(
+        RuntimeError,
+        match="Cannot use FusedAdam and CPUAdam at the same time! Please set either `fused_adam` or `offload` to False.",
+    ):
         model_cls(**_get_minimal_gpt_config(), fused_adam=True, offload=True)
