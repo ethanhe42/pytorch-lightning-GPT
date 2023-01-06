@@ -1,10 +1,10 @@
 import lightning as L
 import pytest
 import torch
-from lightning_gpt import models
 
 import mingpt
 import nanogpt
+from lightning_gpt import models
 
 
 def test_mingpt_vs_lightning_mingpt():
