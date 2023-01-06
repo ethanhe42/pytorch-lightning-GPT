@@ -227,7 +227,7 @@ class FSDPMinGPT(MinGPT):
         self.save_hyperparameters()
         _register_gpt_strategy()
 
-    def configure_optimizers(self):
+    def configure_optimizers(self) -> torch.optim.AdamW:
         return _get_fsdp_optimizers(
             self.trainer.model,
             weight_decay=self.mingpt_trainer_config.weight_decay,
@@ -238,7 +238,7 @@ class FSDPMinGPT(MinGPT):
 
 class DeepSpeedNanoGPT(NanoGPT):
     # TODO: activation checkpointing (requires overriding forward)
-    def __init__(self, fused_adam: bool = True, offload: bool = False, **kwargs):
+    def __init__(self, fused_adam: bool = True, offload: bool = False, **kwargs: Any):
         if fused_adam and offload:
             raise RuntimeError(
                 "Cannot use FusedAdam and CPUAdam at the same time! "
@@ -269,7 +269,7 @@ class FSDPNanoGPT(NanoGPT):
         self.save_hyperparameters()
         _register_gpt_strategy()
 
-    def configure_optimizers(self):
+    def configure_optimizers(self) -> torch.optim.AdamW:
         return _get_fsdp_optimizers(
             self.trainer.model,
             weight_decay=self.nanogpt_trainer_config.weight_decay,
