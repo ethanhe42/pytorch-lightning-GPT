@@ -3,7 +3,7 @@ from urllib.request import urlopen
 
 import lightning as L
 import torch
-from lightning_mingpt import callbacks, data, models
+from lightning_gpt import callbacks, data, models
 from torch.utils.data import DataLoader
 
 
