@@ -21,11 +21,7 @@ def test_mingpt_vs_lightning_mingpt():
 
     mingpt_model = mingpt.model.GPT(mingpt_config)
 
-    lit_model = models.MinGPT(
-        vocab_size=vocab_size,
-        block_size=block_size,
-        model_type=model_type
-    )
+    lit_model = models.MinGPT(vocab_size=vocab_size, block_size=block_size, model_type=model_type)
 
     for target_param, param in zip(lit_model.parameters(), mingpt_model.parameters()):
         target_param.data.copy_(param.data)
@@ -46,20 +42,14 @@ def test_nanogpt_vs_lightning_nanogpt():
 
     x = torch.randint(0, vocab_size, (1, 12))
 
-    nanogpt_config = nanogpt.model.GPTConfig(
-        **models.MINGPT_PRESETS[model_type]
-    )
+    nanogpt_config = nanogpt.model.GPTConfig(**models.MINGPT_PRESETS[model_type])
     nanogpt_config.vocab_size = vocab_size
     nanogpt_config.block_size = block_size
     nanogpt_config.model_type = model_type
 
     nanogpt_model = nanogpt.model.GPT(nanogpt_config)
 
-    lit_model = models.NanoGPT(
-        vocab_size=vocab_size,
-        block_size=block_size,
-        model_type=model_type
-    )
+    lit_model = models.NanoGPT(vocab_size=vocab_size, block_size=block_size, model_type=model_type)
 
     for target_param, param in zip(lit_model.parameters(), nanogpt_model.parameters()):
         target_param.data.copy_(param.data)

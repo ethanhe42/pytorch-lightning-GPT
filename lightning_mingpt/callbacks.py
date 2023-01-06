@@ -1,7 +1,6 @@
 import time
 
 import torch
-
 from lightning.pytorch import Callback
 from lightning.pytorch.utilities import rank_zero_info
 

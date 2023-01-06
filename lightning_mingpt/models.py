@@ -1,23 +1,15 @@
-import dataclasses
 import functools
 import warnings
 from typing import Tuple
 
 import lightning as L
-
 import torch.nn as nn
 import torch.optim
 from torch.optim import AdamW
 
 import mingpt.model
 import mingpt.trainer
-
 import nanogpt.model
-
-from lightning.pytorch.strategies import DeepSpeedStrategy
-from lightning.pytorch.strategies.deepspeed import _DEEPSPEED_AVAILABLE
-from lightning.pytorch.utilities.model_helpers import is_overridden
-
 
 MINGPT_PRESETS = {
     # names follow the huggingface naming conventions
@@ -178,7 +170,7 @@ class NanoGPT(L.LightningModule):
         return self.nanogpt.configure_optimizers(
             weight_decay=self.nanogpt_trainer_config.weight_decay,
             learning_rate=self.nanogpt_trainer_config.learning_rate,
-            betas=self.nanogpt_trainer_config.betas
+            betas=self.nanogpt_trainer_config.betas,
         )
 
     def training_step(self, batch, batch_idx):
@@ -195,7 +187,10 @@ class DeepSpeedMinGPT(MinGPT):
     # TODO: activation checkpointing (requires overriding forward)
     def __init__(self, fused_adam: bool = True, offload: bool = False, **kwargs):
         if fused_adam and offload:
-            raise RuntimeError('Cannot use FusedAdam and CPUAdam at the same time! Please set either `fused_adam` or `offload` to False.')
+            raise RuntimeError(
+                "Cannot use FusedAdam and CPUAdam at the same time! "
+                "Please set either `fused_adam` or `offload` to False."
+            )
 
         super().__init__(**kwargs)
         self.save_hyperparameters()
@@ -257,7 +252,9 @@ class FSDPNanoGPT(NanoGPT):
 
 def _register_gpt_strategy():
     from lightning.pytorch.strategies import StrategyRegistry
-    from lightning.pytorch.strategies.fully_sharded_native import DDPFullyShardedNativeStrategy
+    from lightning.pytorch.strategies.fully_sharded_native import (
+        DDPFullyShardedNativeStrategy,
+    )
     from torch.distributed.fsdp import BackwardPrefetch
     from torch.distributed.fsdp.wrap import transformer_auto_wrap_policy
 
