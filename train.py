@@ -3,9 +3,8 @@ from urllib.request import urlopen
 
 import lightning as L
 import torch
-from torch.utils.data import DataLoader
-
 from lightning_mingpt import callbacks, data, models
+from torch.utils.data import DataLoader
 
 
 def main(args):

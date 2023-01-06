@@ -9,7 +9,7 @@ from typing import List, Tuple
 
 from setuptools import find_packages, setup
 
-PACKAGE_NAME = "lightning_mingpt"
+PACKAGE_NAME = "lightning_gpt"
 
 _PATH_ROOT = os.path.realpath(os.path.dirname(__file__))
 _PATH_SOURCE = _PATH_ROOT

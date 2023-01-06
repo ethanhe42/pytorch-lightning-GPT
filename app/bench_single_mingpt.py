@@ -6,7 +6,7 @@ import torch
 import torch._dynamo
 from torch.utils.data import DataLoader
 
-from lightning_mingpt import bench, data, models
+from lightning_gpt import bench, data, models
 
 
 class GPTBench(bench.Bench):

@@ -1,6 +1,6 @@
-# lightning-minGPT
+# lightning-GPT
 
-lightning-minGPT is an implementation of Andrej Karpathy's minGPT (https://github.com/karpathy/minGPT) and nanoGPT (https://github.com/karpathy/nanoGPT) in Lightning.
+lightning-GPT is a minimal wrapper around Andrej Karpathy's [minGPT](https://github.com/karpathy/minGPT) and [nanoGPT](https://github.com/karpathy/nanoGPT) in Lightning.
 
 It is aimed at providing a minimal Lightning layer on top of minGPT and nanoGPT, while leveraging the full breadth of Lightning.
 
@@ -10,8 +10,8 @@ There are currently a few options:
 - `NanoGPT`: the GPT model from nanoGPT vanilla (set `--implementation=nanogpt`)
 - `DeepSpeedMinGPT`: the GPT model from minGPT made DeepSpeed-ready (set `--strategy=deepspeed`)
 - `DeepSpeedNanoGPT`: the GPT model from nanoGPT made DeepSpeed-ready (set `--strategy=deepspeed`)
-- `FSDPMinGPT`: the GPT model from minGPT made FSDP (native)-ready (set `--strategy=fsdp_native`)
-- `FSDPNanoGPT`: the GPT model from nanoGPT made FSDP (native)-ready (set `--strategy=fsdp_native`)
+- `FSDPMinGPT`: the GPT model from minGPT made FSDP (native)-ready (set `--strategy=fsdp-gpt`)
+- `FSDPNanoGPT`: the GPT model from nanoGPT made FSDP (native)-ready (set `--strategy=fsdp-gpt`)
 
 minGPT and nanoGPT are vendored with the repo in the `mingpt` and `nanogpt` directories respectively. Find the respective LICENSE there.
 
@@ -26,7 +26,7 @@ Thanks to:
 To clone the repository, please clone the repo with
 
 ```shell
-git clone https://github.com/Lightning-AI/lightning-minGPT
+git clone https://github.com/Lightning-AI/lightning-GPT
 git submodule update --init --recursive
 ```
 

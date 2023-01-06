@@ -6,7 +6,7 @@ import torch
 import torch._dynamo
 
 import mingpt.model
-from lightning_mingpt import bench, data, models
+from lightning_gpt import bench, data, models
 
 
 class GPTBench(bench.Bench):

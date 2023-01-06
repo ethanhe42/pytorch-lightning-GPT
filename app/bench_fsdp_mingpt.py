@@ -5,7 +5,7 @@ import lightning as L
 import torch
 from torch.utils.data import DataLoader
 
-from lightning_mingpt import bench, data, models
+from lightning_gpt import bench, data, models
 
 
 class FSDPMinGPTBench(bench.Bench):
