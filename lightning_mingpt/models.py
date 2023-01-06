@@ -226,10 +226,9 @@ class FSDPMinGPT(MinGPT):
         _register_gpt_strategy()
 
     def configure_optimizers(self):
-        optimizer = self.mingpt.configure_optimizers(self.mingpt_trainer_config, model=self.trainer.model, multiple_optim_groups=False)
-        optim_groups = optimizer.param_groups
-
-        return AdamW(optim_groups, lr=self.hparams.learning_rate, betas=self.hparams.betas)
+        return _get_fsdp_optimizers(self.trainer.model, weight_decay=self.mingpt_trainer_config.weight_decay,
+            learning_rate=self.mingpt_trainer_config.learning_rate,
+            betas=self.mingpt_trainer_config.betas)
 
 
 class DeepSpeedNanoGPT(NanoGPT):
@@ -258,10 +257,9 @@ class FSDPNanoGPT(NanoGPT):
         _register_gpt_strategy()
 
     def configure_optimizers(self):
-        optimizer = self.nanogpt.configure_optimizers(self.nanogpt_trainer_config, model=self.trainer.model, multiple_optim_groups=False)
-        optim_groups = optimizer.param_groups
-
-        return AdamW(optim_groups, lr=self.hparams.learning_rate, betas=self.hparams.betas)
+        return _get_fsdp_optimizers(self.trainer.model, weight_decay=self.nanogpt_trainer_config.weight_decay,
+            learning_rate=self.nanogpt_trainer_config.learning_rate,
+            betas=self.nanogpt_trainer_config.betas)
 
 
 def _register_gpt_strategy():
@@ -279,3 +277,8 @@ def _register_gpt_strategy():
         activation_checkpointing=[nanogpt.model.Block, mingpt.model.Block],
         backward_prefetch=BackwardPrefetch.BACKWARD_PRE,
     )
+
+def _get_fsdp_optimizers(model, learning_rate, weight_decay):
+    # fsdp only supports a single parameter group and requires the parameters from the already wrapped model
+    optim_groups = {"params": list(model.parameters()), "weight_decay": weight_decay}
+    return torch.optim.AdamW(optim_groups, lr=learning_rate,  betas=betas)
