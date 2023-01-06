@@ -88,8 +88,7 @@ def test_model_instatiation_base_strategy(tmpdir, model_cls):
         gpt_config.update(fused_adam=False, offload=False)
     mingpt = models.MinGPT(**gpt_config)
     dataloader_train = _get_dummy_data(gpt_config['vocab_size'])
-    dataloader_val = _get_dummy_data(gpt_config['vocab_size'])
-    trainer.fit(mingpt, dataloader_train, dataloader_val)
+    trainer.fit(mingpt, dataloader_train)
     
 
 def test_model_instantiation_error_deepspeed():
