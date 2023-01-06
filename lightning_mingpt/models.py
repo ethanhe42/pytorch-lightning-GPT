@@ -1,20 +1,15 @@
-import dataclasses
 import functools
+import warnings
 
 import lightning as L
-
 import torch.nn as nn
+from lightning.pytorch.strategies.deepspeed import _DEEPSPEED_AVAILABLE
+from lightning.pytorch.utilities.model_helpers import is_overridden
 from torch.optim import AdamW
 
 import mingpt.model
 import mingpt.trainer
-
 import nanogpt.model
-
-from lightning.pytorch.strategies import DeepSpeedStrategy
-from lightning.pytorch.strategies.deepspeed import _DEEPSPEED_AVAILABLE
-from lightning.pytorch.utilities.model_helpers import is_overridden
-
 
 MINGPT_PRESETS = {
     # names follow the huggingface naming conventions
@@ -175,7 +170,7 @@ class NanoGPT(L.LightningModule):
         return self.nanogpt.configure_optimizers(
             weight_decay=self.nanogpt_trainer_config.weight_decay,
             learning_rate=self.nanogpt_trainer_config.learning_rate,
-            betas=self.nanogpt_trainer_config.betas
+            betas=self.nanogpt_trainer_config.betas,
         )
 
     def training_step(self, batch, batch_idx):
@@ -192,7 +187,10 @@ class DeepSpeedMinGPT(MinGPT):
     # TODO: activation checkpointing (requires overriding forward)
     def __init__(self, fused_adam: bool = True, offload: bool = False, **kwargs):
         if fused_adam and offload:
-            raise RuntimeError('Cannot use FusedAdam and CPUAdam at the same time! Please set either `fused_adam` or `offload` to False.')
+            raise RuntimeError(
+                "Cannot use FusedAdam and CPUAdam at the same time! "
+                "Please set either `fused_adam` or `offload` to False."
+            )
 
         super().__init__(**kwargs)
         self.save_hyperparameters()
@@ -204,14 +202,18 @@ class DeepSpeedMinGPT(MinGPT):
         # import locally because of https://github.com/Lightning-AI/lightning/pull/15610
         if self.hparams.offload and _DEEPSPEED_AVAILABLE:
             from deepspeed.ops.adam import DeepSpeedCPUAdam
+
             return DeepSpeedCPUAdam(optim_groups, lr=self.hparams.learning_rate, betas=self.hparams.betas)
 
         elif self.hparams.fused_adam and _DEEPSPEED_AVAILABLE:
             from deepspeed.ops.adam import FusedAdam
+
             return FusedAdam(optim_groups, lr=self.hparams.learning_rate, betas=self.hparams.betas)
 
         elif self.hparams.fused_adam or self.hparams.offload:
-            warnings.warn('Deepspeed is not available, so cannot enable fused adam or cpu offloaded adam. Please install deepspeed!')
+            warnings.warn(
+                "Deepspeed is not available, so can't enable fused or cpu offloaded adam. Please install deepspeed!"
+            )
 
         return optimizer
 
@@ -226,7 +228,9 @@ class FSDPMinGPT(MinGPT):
         _register_gpt_strategy()
 
     def configure_optimizers(self):
-        optimizer = self.mingpt.configure_optimizers(self.mingpt_trainer_config, model=self.trainer.model, multiple_optim_groups=False)
+        optimizer = self.mingpt.configure_optimizers(
+            self.mingpt_trainer_config, model=self.trainer.model, multiple_optim_groups=False
+        )
         optim_groups = optimizer.param_groups
 
         return AdamW(optim_groups, lr=self.hparams.learning_rate, betas=self.hparams.betas)
@@ -243,7 +247,11 @@ class DeepSpeedNanoGPT(NanoGPT):
         optim_groups = optimizer.param_groups
 
         if self.hparams.offload:
+            from deepspeed.ops.adam import DeepSpeedCPUAdam
+
             return DeepSpeedCPUAdam(optim_groups, lr=self.hparams.learning_rate, betas=self.hparams.betas)
+
+        from deepspeed.ops.adam import FusedAdam
 
         return FusedAdam(optim_groups, lr=self.hparams.learning_rate, betas=self.hparams.betas)
 
@@ -258,7 +266,9 @@ class FSDPNanoGPT(NanoGPT):
         _register_gpt_strategy()
 
     def configure_optimizers(self):
-        optimizer = self.nanogpt.configure_optimizers(self.nanogpt_trainer_config, model=self.trainer.model, multiple_optim_groups=False)
+        optimizer = self.nanogpt.configure_optimizers(
+            self.nanogpt_trainer_config, model=self.trainer.model, multiple_optim_groups=False
+        )
         optim_groups = optimizer.param_groups
 
         return AdamW(optim_groups, lr=self.hparams.learning_rate, betas=self.hparams.betas)
@@ -266,11 +276,15 @@ class FSDPNanoGPT(NanoGPT):
 
 def _register_gpt_strategy():
     from lightning.pytorch.strategies import StrategyRegistry
-    from lightning.pytorch.strategies.fully_sharded_native import DDPFullyShardedNativeStrategy
+    from lightning.pytorch.strategies.fully_sharded_native import (
+        DDPFullyShardedNativeStrategy,
+    )
     from torch.distributed.fsdp import BackwardPrefetch
     from torch.distributed.fsdp.wrap import transformer_auto_wrap_policy
 
-    auto_wrap_policy = functools.partial(transformer_auto_wrap_policy, transformer_layer_cls={nanogpt.model.Block, mingpt.model.Block})
+    auto_wrap_policy = functools.partial(
+        transformer_auto_wrap_policy, transformer_layer_cls={nanogpt.model.Block, mingpt.model.Block}
+    )
     StrategyRegistry.register(
         name="fsdp-gpt",
         strategy=DDPFullyShardedNativeStrategy,

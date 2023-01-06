@@ -2,9 +2,8 @@ import math
 import random
 
 import torch
-from torch.utils.data import Dataset
-
 from lightning.pytorch.utilities import rank_zero_info
+from torch.utils.data import Dataset
 
 
 class CharDataset(Dataset):

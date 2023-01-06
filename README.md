@@ -16,12 +16,15 @@ There are currently a few options:
 minGPT and nanoGPT are vendored with the repo in the `mingpt` and `nanogpt` directories respectively. Find the respective LICENSE there.
 
 Thanks to:
+
 - @karpathy for the original minGPT and nanoGPT implementation
 - @williamFalcon for the first Lightning port
 - @SeanNaren for the DeepSpeed pieces
 
 ## Installation from source
-To clone the repository, please clone the repo with 
+
+To clone the repository, please clone the repo with
+
 ```shell
 git clone https://github.com/Lightning-AI/lightning-minGPT
 git submodule update --init --recursive
@@ -73,7 +76,6 @@ python train.py --help
 ```
 
 for the available flags.
-
 
 ## DeepSpeed
 

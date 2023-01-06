@@ -2,9 +2,8 @@ import gc
 import time
 from typing import Type
 
-import torch
-
 import lightning as L
+import torch
 from lightning.app.components import LightningTrainerMultiNode
 
 
