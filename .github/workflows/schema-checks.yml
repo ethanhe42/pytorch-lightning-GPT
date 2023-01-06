@@ -1,4 +1,4 @@
-name: General checks
+name: Schema Checks
 
 on:
   push:
@@ -11,21 +11,9 @@ concurrency:
   cancel-in-progress: ${{ ! (github.ref == 'refs/heads/master' || startsWith(github.ref, 'refs/heads/release/')) }}
 
 jobs:
-  check-code:
-    uses: ./.github/workflows/tmp-check-code.yml
 
   check-schema:
     uses: ./.github/workflows/tmp-check-schema.yml
     with:
       azure-dir: '' # disable azure checks
 
-  check-package:
-    uses: ./.github/workflows/tmp-check-package.yml
-    with:
-      import-name: "lightning_mingpt"
-      artifact-name: "lightning-mingpt"
-      testing-matrix: |
-        {
-          "os": ["ubuntu-20.04", "macos-11", "windows-2022"],
-          "python-version": ["3.8", "3.10"]
-        }
