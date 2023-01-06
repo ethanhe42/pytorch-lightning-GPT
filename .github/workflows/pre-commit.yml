@@ -15,10 +15,6 @@ defaults:
   run:
     shell: bash
 
-defaults:
-  run:
-    shell: bash
-
 jobs:
   pre-commit:
     runs-on: ubuntu-20.04
