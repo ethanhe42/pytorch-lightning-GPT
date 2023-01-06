@@ -37,7 +37,11 @@ class GPTBench(bench.Bench):
 
         return model, dataloader
 
-    def train(self, model: "L.LightningModule", dataloader: torch.utils.data.DataLoader,) -> Optional[float]:
+    def train(
+        self,
+        model: "L.LightningModule",
+        dataloader: torch.utils.data.DataLoader,
+    ) -> Optional[float]:
         trainer = L.Trainer(
             max_epochs=self.max_epochs,
             gradient_clip_val=1.0,

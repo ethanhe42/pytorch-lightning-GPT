@@ -16,4 +16,3 @@ jobs:
     uses: ./.github/workflows/tmp-check-schema.yml
     with:
       azure-dir: '' # disable azure checks
-

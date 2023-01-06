@@ -3,7 +3,6 @@ import warnings
 from typing import Any, Optional, Tuple
 
 import lightning as L
-import torch.nn as nn
 import torch.optim
 from lightning.pytorch.strategies.deepspeed import _DEEPSPEED_AVAILABLE
 from lightning_utilities.core.overrides import is_overridden
@@ -310,7 +309,7 @@ def _get_deepspeed_optimizer(
     fused_adam: bool,
     learning_rate: float,
     betas: Tuple[float, float],
-):
+) -> torch.optim.Optimizer:
     optim_groups = optimizer.param_groups
 
     # import locally because of https://github.com/Lightning-AI/lightning/pull/15610
@@ -332,6 +331,8 @@ def _get_deepspeed_optimizer(
     return optimizer
 
 
-def _get_fsdp_optimizers(model, learning_rate, weight_decay, betas):
+def _get_fsdp_optimizers(
+    model: torch.nn.Module, learning_rate: float, weight_decay: float, betas: Tuple[float, float]
+) -> torch.optim.AdamW:
     # fsdp only supports a single parameter group and requires the parameters from the already wrapped model
     return torch.optim.AdamW(model.parameters(), lr=learning_rate, betas=betas, weight_decay=weight_decay)
