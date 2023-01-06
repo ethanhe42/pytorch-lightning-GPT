@@ -1,4 +1,4 @@
-name: Test MinGPT
+name: Pre-Commit
 
 # see: https://help.github.com/en/actions/reference/events-that-trigger-workflows
 on:
