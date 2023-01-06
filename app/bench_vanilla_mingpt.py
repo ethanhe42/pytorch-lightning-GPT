@@ -5,7 +5,7 @@ import lightning as L
 import torch
 import torch._dynamo
 
-import mingpt.mingpt.model
+import mingpt.model
 from lightning_mingpt import bench, data, models
 
 
