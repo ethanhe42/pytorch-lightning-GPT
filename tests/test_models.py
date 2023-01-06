@@ -93,5 +93,5 @@ def test_model_instatiation_base_strategy(tmpdir, model_cls):
 
 @pytest.mark.parametrize('model_cls', [models.DeepSpeedMinGPT, models.DeepSpeedNanoGPT])
 def test_model_instantiation_error_deepspeed(model_cls):
-    with pytest.raises(RuntimeError, match="Can't use Fused- and CPUAdam at the same time! Please set either `fused_adam` or `offload` to False."):
+    with pytest.raises(RuntimeError, match='Cannot use FusedAdam and CPUAdam at the same time! Please set either `fused_adam` or `offload` to False.'):
         model_cls(**_get_minimal_gpt_config(), fused_adam=True, offload=True)
