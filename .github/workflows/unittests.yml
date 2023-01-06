@@ -51,7 +51,7 @@ jobs:
       env:
         PACKAGE_NAME: ${{ matrix.pkg-name }}
       run: |
-        pip install '.[test]' --upgrade --extra-index-url --extra-index-url https://download.pytorch.org/whl/cpu/torch_stable.html
+        pip install '.[test]' --upgrade --extra-index-url https://download.pytorch.org/whl/cpu/torch_stable.html
         pip list
 
     - name: Testing
