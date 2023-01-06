@@ -1,7 +1,7 @@
 # See https://pre-commit.com for more information
 # See https://pre-commit.com/hooks.html for more hooks
 default_language_version:
-  python: python3.8
+  python: python3
 
 ci:
   autofix_prs: true
@@ -14,17 +14,23 @@ repos:
     rev: v4.3.0
     hooks:
       - id: end-of-file-fixer
+        exclude: |
+          (?x)(
+              nanogpt
+              mingpt
+          )
       - id: trailing-whitespace
+        exclude: |
+          (?x)(
+              nanogpt
+              mingpt
+          )
       - id: check-case-conflict
       - id: check-yaml
         exclude: redis/redis.yml
       - id: check-toml
       - id: check-json
       - id: check-added-large-files
-        exclude: |
-          (?x)(
-              ^muse/ui/build
-          )
       - id: check-docstring-first
       - id: detect-private-key
 
@@ -34,24 +40,44 @@ repos:
       - id: pyupgrade
         args: [--py36-plus]
         name: Upgrade code
+        exclude: |
+          (?x)(
+              nanogpt
+              mingpt
+          )
 
   - repo: https://github.com/myint/docformatter
     rev: v1.5.0
     hooks:
       - id: docformatter
         args: [--in-place, --wrap-summaries=120, --wrap-descriptions=120]
+        exclude: |
+          (?x)(
+              nanogpt
+              mingpt
+          )
 
-  # - repo: https://github.com/PyCQA/isort
-  #   rev: 5.10.1
-  #   hooks:
-  #     - id: isort
-  #       args: [--profile, black]
+  - repo: https://github.com/PyCQA/isort
+    rev: 5.10.1
+    hooks:
+      - id: isort
+        args: [--profile, black]
+        exclude: |
+          (?x)(
+              nanogpt
+              mingpt
+          )
 
-  # - repo: https://github.com/psf/black
-  #   rev: 22.6.0
-  #   hooks:
-  #     - id: black
-  #       name: Black code
+  - repo: https://github.com/psf/black
+    rev: 22.6.0
+    hooks:
+      - id: black
+        name: Black code
+        exclude: |
+          (?x)(
+              nanogpt
+              mingpt
+          )
 
   - repo: https://github.com/executablebooks/mdformat
     rev: 0.7.15
@@ -61,14 +87,28 @@ repos:
           - mdformat-gfm
           - mdformat-black
           - mdformat_frontmatter
-        exclude: ^resources
+        exclude: |
+          (?x)(
+              nanogpt
+              mingpt
+          )
 
   - repo: https://github.com/asottile/yesqa
     rev: v1.4.0
     hooks:
       - id: yesqa
+        exclude: |
+          (?x)(
+              nanogpt
+              mingpt
+          )
 
   - repo: https://github.com/PyCQA/flake8
     rev: 4.0.1
     hooks:
       - id: flake8
+        exclude: |
+          (?x)(
+              nanogpt
+              mingpt
+          )
