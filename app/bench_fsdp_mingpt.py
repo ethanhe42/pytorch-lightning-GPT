@@ -35,7 +35,7 @@ class FSDPMinGPTBench(bench.Bench):
 
         return model, dataloader
 
-    def train(self, model: "L.LightningModule", dataloader: DataLoader) -> float:  # type: ignore
+    def train(self, model: "L.LightningModule", dataloader: DataLoader) -> float:
         trainer = L.Trainer(
             fast_dev_run=True,
             max_epochs=self.max_epochs,

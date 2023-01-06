@@ -16,12 +16,12 @@ def _hook_memory() -> int:
     return used_memory
 
 
-class BenchRun(L.LightningFlow):  # type: ignore
+class BenchRun(L.LightningFlow):
     def __init__(
         self,
-        work_cls: Type[L.LightningWork],  # type: ignore
+        work_cls: Type[L.LightningWork],
         num_nodes: int,
-        cloud_compute: L.CloudCompute,  # type: ignore
+        cloud_compute: L.CloudCompute,
     ):
         super().__init__()
         self.num_nodes = num_nodes
@@ -55,7 +55,7 @@ class BenchRun(L.LightningFlow):  # type: ignore
     #     # return [{"name": "Training Logs", "content": self.tensorboard_work.url}]
 
 
-class Bench(L.LightningWork):  # type: ignore
+class Bench(L.LightningWork):
     def __init__(self, *args: Any, **kwargs: Any):
         super().__init__(*args, **kwargs)
         self.results: Dict[str, Dict[str, Union[List[int], List[float]]]] = {}

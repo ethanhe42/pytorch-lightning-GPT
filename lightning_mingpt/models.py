@@ -35,7 +35,7 @@ MINGPT_PRESETS = {
 }
 
 
-class MinGPT(L.LightningModule):  # type: ignore
+class MinGPT(L.LightningModule):
     mingpt: mingpt.model.GPT
 
     def __init__(
@@ -56,7 +56,7 @@ class MinGPT(L.LightningModule):  # type: ignore
         super().__init__()
         self.save_hyperparameters()
         self.build_mingpt_configs()
-        if not is_overridden("configure_sharded_model", self, L.LightningModule):  # type: ignore
+        if not is_overridden("configure_sharded_model", self, L.LightningModule):
             self.mingpt = mingpt.model.GPT(self.mingpt_config)
 
     def build_mingpt_configs(self) -> None:
@@ -118,7 +118,7 @@ class MinGPT(L.LightningModule):  # type: ignore
         return self.mingpt.generate(idx, max_new_tokens, temperature, do_sample, top_k)
 
 
-class NanoGPT(L.LightningModule):  # type: ignore
+class NanoGPT(L.LightningModule):
     nanogpt: nanogpt.model.GPT
 
     def __init__(
@@ -137,7 +137,7 @@ class NanoGPT(L.LightningModule):  # type: ignore
         super().__init__()
         self.save_hyperparameters()
         self.build_nanogpt_configs()
-        if not is_overridden("configure_sharded_model", self, L.LightningModule):  # type: ignore
+        if not is_overridden("configure_sharded_model", self, L.LightningModule):
             self.nanogpt = nanogpt.model.GPT(self.nanogpt_config)
 
     def build_nanogpt_configs(self) -> None:
