@@ -1,14 +1,16 @@
+from typing import Any, Optional, Tuple
 from urllib.request import urlopen
 
 import lightning as L
 import torch
 import torch._dynamo
 
+import mingpt.model
 from lightning_mingpt import bench, data, models
 
 
 class GPTBench(bench.Bench):
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args: Any, **kwargs: Any):
         super().__init__(*args, **kwargs)
         self.num_workers = 0
         self.batch_size = 64
@@ -17,7 +19,7 @@ class GPTBench(bench.Bench):
         self.model_type = "gpt-micro"
         self.num_runs = 2
 
-    def create(self):
+    def create(self) -> Tuple[mingpt.model.GPT, torch.utils.data.DataLoader]:
         torch.set_float32_matmul_precision("high")
         torch._dynamo.config.suppress_errors = True
 
@@ -25,6 +27,7 @@ class GPTBench(bench.Bench):
             text = f.read()
 
         dataset = data.CharDataset(text, block_size=128)
+        dataloader = torch.utils.data.DataLoader(dataset, batch_size=self.batch_size, num_workers=self.num_workers)
 
         model = models.MinGPT(
             vocab_size=dataset.vocab_size,
@@ -32,15 +35,15 @@ class GPTBench(bench.Bench):
             model_type=self.model_type,
         )
 
-        return model.mingpt, dataset
+        return model.mingpt, dataloader
 
-    def train(self, model, dataset):
+    def train(self, model: mingpt.model.GPT, dataset: torch.utils.data.Dataset) -> Optional[float]:
         from mingpt.trainer import Trainer
 
         train_config = Trainer.get_default_config()
         train_config.device = "cuda"
         train_config.learning_rate = 3e-4
-        train_config.max_iters = len(dataset) / self.batch_size * self.max_epochs
+        train_config.max_iters = len(dataset) / self.batch_size * self.max_epochs  # type: ignore
         train_config.num_workers = self.num_workers
         train_config.batch_size = self.batch_size
         train_config.grad_norm_clip = 1.0
@@ -51,7 +54,7 @@ class GPTBench(bench.Bench):
         final_loss = trainer.loss
         return final_loss.item() if final_loss is not None else None
 
-    def run(self):
+    def run(self) -> None:
         model, dataloader = self.create()
 
         self.run_benchmark(name="nocompile", fn=self.train, args=(model, dataloader), num_runs=self.num_runs)

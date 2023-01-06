@@ -1,13 +1,13 @@
 import gc
 import time
-from typing import Type
+from typing import Any, Callable, Dict, Iterable, List, Optional, Type, Union
 
 import lightning as L
 import torch
 from lightning.app.components import LightningTrainerMultiNode
 
 
-def _hook_memory():
+def _hook_memory() -> int:
     if torch.cuda.is_available():
         torch.cuda.synchronize()
         used_memory = torch.cuda.max_memory_allocated()
@@ -25,7 +25,7 @@ class BenchRun(L.LightningFlow):
     ):
         super().__init__()
         self.num_nodes = num_nodes
-        self.results = []
+        self.results: List[Dict[str, Dict[str, Union[List[int], List[float]]]]] = []
 
         if num_nodes > 1:
             self.multinode = LightningTrainerMultiNode(
@@ -36,7 +36,7 @@ class BenchRun(L.LightningFlow):
         else:
             self.w = work_cls(cloud_compute=cloud_compute)
 
-    def run(self, *args, **kwargs):
+    def run(self, *args: Any, **kwargs: Any) -> None:
         results = []
         if self.num_nodes > 1:
             self.multinode.run(*args, **kwargs)
@@ -56,12 +56,26 @@ class BenchRun(L.LightningFlow):
 
 
 class Bench(L.LightningWork):
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args: Any, **kwargs: Any):
         super().__init__(*args, **kwargs)
-        self.results = {}
+        self.results: Dict[str, Dict[str, Union[List[int], List[float]]]] = {}
 
-    def run_benchmark(self, name, fn, args=[], kwargs={}, num_runs=10, device_type="auto"):
+    def run_benchmark(
+        self,
+        name: str,
+        fn: Callable,
+        args: Optional[Iterable[Any]] = None,
+        kwargs: Optional[Dict[str, Any]] = None,
+        num_runs: int = 10,
+        device_type: str = "auto",
+    ) -> None:
         """Returns an array with the last loss from each epoch for each run."""
+
+        if args is None:
+            args = []
+
+        if kwargs is None:
+            kwargs = {}
         hist_losses = []
         hist_durations = []
         hist_memory = []
@@ -69,7 +83,7 @@ class Bench(L.LightningWork):
         if device_type == "auto":
             device_type = "cuda" if torch.cuda.is_available() else "cpu"
         torch.backends.cudnn.deterministic = True
-        for i in range(self.num_runs):
+        for i in range(num_runs):
             print(f"Run {i+1}/{self.num_runs}")
             gc.collect()
             if device_type == "cuda":
