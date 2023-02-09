@@ -2,8 +2,8 @@ import functools
 import warnings
 from typing import Any, Optional, Tuple
 
-import lightning as L
 import torch.optim
+from lightning import LightningModule
 from lightning.pytorch.strategies.deepspeed import _DEEPSPEED_AVAILABLE
 from lightning_utilities.core.overrides import is_overridden
 
@@ -34,7 +34,7 @@ MINGPT_PRESETS = {
 }
 
 
-class MinGPT(L.LightningModule):
+class MinGPT(LightningModule):
     mingpt: mingpt.model.GPT
 
     def __init__(
@@ -55,7 +55,7 @@ class MinGPT(L.LightningModule):
         super().__init__()
         self.save_hyperparameters()
         self.build_mingpt_configs()
-        if not is_overridden("configure_sharded_model", self, L.LightningModule):
+        if not is_overridden("configure_sharded_model", self, LightningModule):
             self.mingpt = mingpt.model.GPT(self.mingpt_config)
 
     def build_mingpt_configs(self) -> None:
@@ -117,7 +117,7 @@ class MinGPT(L.LightningModule):
         return self.mingpt.generate(idx, max_new_tokens, temperature, do_sample, top_k)
 
 
-class NanoGPT(L.LightningModule):
+class NanoGPT(LightningModule):
     nanogpt: nanogpt.model.GPT
 
     def __init__(
@@ -132,11 +132,12 @@ class NanoGPT(L.LightningModule):
         weight_decay: float = 0.1,
         learning_rate: float = 3e-4,
         betas: Tuple[float, float] = (0.9, 0.95),
+        device_type: str = "cpu",
     ):
         super().__init__()
         self.save_hyperparameters()
         self.build_nanogpt_configs()
-        if not is_overridden("configure_sharded_model", self, L.LightningModule):
+        if not is_overridden("configure_sharded_model", self, LightningModule):
             self.nanogpt = nanogpt.model.GPT(self.nanogpt_config)
 
     def build_nanogpt_configs(self) -> None:
@@ -181,6 +182,7 @@ class NanoGPT(L.LightningModule):
             weight_decay=self.nanogpt_trainer_config.weight_decay,
             learning_rate=self.nanogpt_trainer_config.learning_rate,
             betas=self.nanogpt_trainer_config.betas,
+            device_type=self.hparams.device_type,
         )
 
     def training_step(self, batch: torch.Tensor, batch_idx: int) -> torch.Tensor:
@@ -245,6 +247,8 @@ class DeepSpeedNanoGPT(NanoGPT):
                 "Please set either `fused_adam` or `offload` to False."
             )
 
+        kwargs["device_type"] = "cuda" if fused_adam or kwargs.pop("device_type", "cpu") == "cuda" else "cpu"
+
         super().__init__(**kwargs)
         self.save_hyperparameters()
 
@@ -253,7 +257,7 @@ class DeepSpeedNanoGPT(NanoGPT):
 
         return _get_deepspeed_optimizer(
             optimizer,
-            fused_adam=self.hparams.fused_adam,
+            fused_adam=self.hparams.device_type == "cuda",
             cpu_offload=self.hparams.offload,
             learning_rate=self.hparams.learning_rate,
             betas=self.hparams.betas,

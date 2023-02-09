@@ -1,7 +1,11 @@
-from typing import Any, Optional, Tuple
+from typing import TYPE_CHECKING, Any, Optional, Tuple
 from urllib.request import urlopen
 
 import lightning as L
+
+if TYPE_CHECKING:
+    from lightning import LightningModule
+
 import torch
 import torch._dynamo
 from torch.utils.data import DataLoader
@@ -39,7 +43,7 @@ class GPTBench(bench.Bench):
 
     def train(
         self,
-        model: "L.LightningModule",
+        model: "LightningModule",
         dataloader: torch.utils.data.DataLoader,
     ) -> Optional[float]:
         trainer = L.Trainer(

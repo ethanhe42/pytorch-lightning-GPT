@@ -1,7 +1,11 @@
-from typing import Any, Tuple
+from typing import TYPE_CHECKING, Any, Tuple
 from urllib.request import urlopen
 
 import lightning as L
+
+if TYPE_CHECKING:
+    from lightning import LightningModule
+
 import torch
 from torch.utils.data import DataLoader
 
@@ -35,7 +39,7 @@ class FSDPMinGPTBench(bench.Bench):
 
         return model, dataloader
 
-    def train(self, model: "L.LightningModule", dataloader: DataLoader) -> float:
+    def train(self, model: "LightningModule", dataloader: DataLoader) -> float:
         trainer = L.Trainer(
             fast_dev_run=True,
             max_epochs=self.max_epochs,

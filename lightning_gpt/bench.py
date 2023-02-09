@@ -2,8 +2,8 @@ import gc
 import time
 from typing import Any, Callable, Dict, Iterable, List, Optional, Type, Union
 
-import lightning as L
 import torch
+from lightning import CloudCompute, LightningFlow, LightningWork
 from lightning.app.components import LightningTrainerMultiNode
 
 
@@ -16,12 +16,12 @@ def _hook_memory() -> int:
     return used_memory
 
 
-class BenchRun(L.LightningFlow):
+class BenchRun(LightningFlow):
     def __init__(
         self,
-        work_cls: Type[L.LightningWork],
+        work_cls: Type[LightningWork],
         num_nodes: int,
-        cloud_compute: L.CloudCompute,
+        cloud_compute: CloudCompute,
     ):
         super().__init__()
         self.num_nodes = num_nodes
@@ -55,7 +55,7 @@ class BenchRun(L.LightningFlow):
     #     # return [{"name": "Training Logs", "content": self.tensorboard_work.url}]
 
 
-class Bench(L.LightningWork):
+class Bench(LightningWork):
     def __init__(self, *args: Any, **kwargs: Any):
         super().__init__(*args, **kwargs)
         self.results: Dict[str, Dict[str, Union[List[int], List[float]]]] = {}
