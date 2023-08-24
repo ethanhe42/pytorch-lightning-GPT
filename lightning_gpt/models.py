@@ -2,14 +2,13 @@ import functools
 import warnings
 from typing import Any, Optional, Tuple
 
+import mingpt.model
+import mingpt.trainer
+import nanogpt.model
 import torch.optim
 from lightning import LightningModule
 from lightning.pytorch.strategies.deepspeed import _DEEPSPEED_AVAILABLE
 from lightning_utilities.core.overrides import is_overridden
-
-import mingpt.model
-import mingpt.trainer
-import nanogpt.model
 from mingpt.utils import CfgNode
 
 MINGPT_PRESETS = {
