@@ -60,6 +60,12 @@ class Bench(LightningWork):
         super().__init__(*args, **kwargs)
         self.results: Dict[str, Dict[str, Union[List[int], List[float]]]] = {}
 
+    def _check_precision(self) -> None:
+        if not isinstance(self.precision, (int, str)):
+            raise ValueError(f"Unsupported precision of type {type(self.precision)}.")
+        if self.precision not in (64, 32, 16, "64", "32", "16", "bf16", "16-mixed", "bf16-mixed", "32-true", "64-true"):
+            raise ValueError(f"Selected precision {self.precision} is not supported")
+
     def run_benchmark(
         self,
         name: str,

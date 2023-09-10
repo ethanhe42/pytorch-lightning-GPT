@@ -22,9 +22,6 @@ jobs:
     steps:
     - name: Checkout 🛎️
       uses: actions/checkout@v3
-      with:
-        submodules: recursive
-
     - name: Set up Python 🐍 3.9
       uses: actions/setup-python@v4
       with:
@@ -33,7 +30,6 @@ jobs:
     - name: Get pip cache dir
       id: pip-cache
       run: echo "dir=$(pip cache dir)" >> $GITHUB_OUTPUT
-
     - name: pip cache
       uses: actions/cache@v3
       with:
@@ -45,7 +41,7 @@ jobs:
     - name: Install dependencies
       run: |
         pip install -e '.[test]' --extra-index-url https://download.pytorch.org/whl/cpu/torch_stable.html
-        pip install mypy==0.982 types-setuptools # don't use --upgrade to respect the version installed via setup.py
+        pip install mypy==1.5.0  # don't use --upgrade to respect the version installed via setup.py
         pip list
 
     - name: Check typing

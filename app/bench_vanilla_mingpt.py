@@ -2,10 +2,10 @@ from typing import Any, Optional, Tuple
 from urllib.request import urlopen
 
 import lightning as L
-import mingpt.model
 import torch
 import torch._dynamo
 
+import mingpt.model
 from lightning_gpt import bench, data, models
 
 

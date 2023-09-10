@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING, Any, Tuple
+from typing import Any, Tuple, TYPE_CHECKING
 from urllib.request import urlopen
 
 import lightning as L
@@ -40,18 +40,19 @@ class FSDPMinGPTBench(bench.Bench):
         return model, dataloader
 
     def train(self, model: "LightningModule", dataloader: DataLoader) -> float:
+        self._check_precision()
         trainer = L.Trainer(
             fast_dev_run=True,
             max_epochs=self.max_epochs,
             gradient_clip_val=1.0,
             accelerator="cuda",
             devices="auto",
-            precision=self.precision,
+            precision=self.precision,  # type: ignore
             enable_progress_bar=False,
             enable_model_summary=False,
             enable_checkpointing=False,
             logger=False,
-            replace_sampler_ddp=False,
+            use_distributed_sampler=False,
             strategy="fsdp_native",
         )
 

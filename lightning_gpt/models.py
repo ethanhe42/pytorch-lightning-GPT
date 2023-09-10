@@ -2,13 +2,14 @@ import functools
 import warnings
 from typing import Any, Optional, Tuple
 
-import mingpt.model
-import mingpt.trainer
-import nanogpt.model
 import torch.optim
 from lightning import LightningModule
 from lightning.pytorch.strategies.deepspeed import _DEEPSPEED_AVAILABLE
 from lightning_utilities.core.overrides import is_overridden
+
+import mingpt.model
+import mingpt.trainer
+import nanogpt.model
 from mingpt.utils import CfgNode
 
 MINGPT_PRESETS = {
@@ -229,6 +230,7 @@ class FSDPMinGPT(MinGPT):
         _register_gpt_strategy()
 
     def configure_optimizers(self) -> torch.optim.AdamW:
+        assert isinstance(self.trainer.model, torch.nn.Module)
         return _get_fsdp_optimizers(
             self.trainer.model,
             weight_decay=self.mingpt_trainer_config.weight_decay,
@@ -273,6 +275,7 @@ class FSDPNanoGPT(NanoGPT):
         _register_gpt_strategy()
 
     def configure_optimizers(self) -> torch.optim.AdamW:
+        assert isinstance(self.trainer.model, torch.nn.Module)
         return _get_fsdp_optimizers(
             self.trainer.model,
             weight_decay=self.nanogpt_trainer_config.weight_decay,
@@ -283,9 +286,7 @@ class FSDPNanoGPT(NanoGPT):
 
 def _register_gpt_strategy() -> None:
     from lightning.pytorch.strategies import StrategyRegistry
-    from lightning.pytorch.strategies.fully_sharded_native import (
-        DDPFullyShardedNativeStrategy,
-    )
+    from lightning.pytorch.strategies.fsdp import FSDPStrategy
     from torch.distributed.fsdp import BackwardPrefetch
     from torch.distributed.fsdp.wrap import transformer_auto_wrap_policy
 
@@ -298,7 +299,7 @@ def _register_gpt_strategy() -> None:
 
     StrategyRegistry.register(
         name="fsdp-gpt",
-        strategy=DDPFullyShardedNativeStrategy,
+        strategy=FSDPStrategy,
         description="FSDP strategy with memory optimizations enabled for GPT large scale pretraining.",
         auto_wrap_policy=auto_wrap_policy,
         activation_checkpointing=[nanogpt.model.Block, mingpt.model.Block],
