@@ -118,3 +118,6 @@ lightning_logs
 .DS_Store
 .*_submit.py
 .storage
+
+# Ruff
+.ruff_cache/

@@ -7,24 +7,14 @@ ci:
   autofix_prs: true
   autoupdate_commit_msg: "[pre-commit.ci] pre-commit suggestions"
   autoupdate_schedule: quarterly
-  # submodules: true
+  submodules: false
 
 repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v4.4.0
     hooks:
       - id: end-of-file-fixer
-        exclude: |
-          (?x)(
-              nanogpt
-              mingpt
-          )
       - id: trailing-whitespace
-        exclude: |
-          (?x)(
-              nanogpt
-              mingpt
-          )
       - id: check-case-conflict
       - id: check-yaml
         exclude: redis/redis.yml
@@ -38,46 +28,20 @@ repos:
     rev: v3.8.0
     hooks:
       - id: pyupgrade
-        args: [--py36-plus]
+        args: ["--py38-plus"]
         name: Upgrade code
-        exclude: |
-          (?x)(
-              nanogpt
-              mingpt
-          )
 
   - repo: https://github.com/PyCQA/docformatter
     rev: v1.7.3
     hooks:
       - id: docformatter
-        args: [--in-place, --wrap-summaries=120, --wrap-descriptions=120]
-        exclude: |
-          (?x)(
-              nanogpt
-              mingpt
-          )
-
-  - repo: https://github.com/PyCQA/isort
-    rev: 5.12.0
-    hooks:
-      - id: isort
-        args: [--profile, black]
-        exclude: |
-          (?x)(
-              nanogpt
-              mingpt
-          )
+        args: ["--in-place", "--wrap-summaries=119", "--wrap-descriptions=120"]
 
   - repo: https://github.com/psf/black
     rev: 23.3.0
     hooks:
       - id: black
         name: Black code
-        exclude: |
-          (?x)(
-              nanogpt
-              mingpt
-          )
 
   - repo: https://github.com/executablebooks/mdformat
     rev: 0.7.16
@@ -87,28 +51,14 @@ repos:
           - mdformat-gfm
           - mdformat-black
           - mdformat_frontmatter
-        exclude: |
-          (?x)(
-              nanogpt
-              mingpt
-          )
 
   - repo: https://github.com/asottile/yesqa
     rev: v1.5.0
     hooks:
       - id: yesqa
-        exclude: |
-          (?x)(
-              nanogpt
-              mingpt
-          )
 
-  - repo: https://github.com/PyCQA/flake8
-    rev: 6.0.0
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: 'v0.0.276'
     hooks:
-      - id: flake8
-        exclude: |
-          (?x)(
-              nanogpt
-              mingpt
-          )
+      - id: ruff
+        args: ["--fix"]
