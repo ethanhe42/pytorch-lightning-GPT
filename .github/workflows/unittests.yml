@@ -5,7 +5,6 @@ on:
   push:
     branches: [main, "release/*"]
   pull_request:
-    branches: [main, "release/*"]
     types: [opened, reopened, ready_for_review, synchronize]  # added `ready_for_review` since draft is skipped
 
 concurrency:
@@ -52,19 +51,12 @@ jobs:
       env:
         PACKAGE_NAME: ${{ matrix.pkg-name }}
       run: |
-        pip install '.[test]' --upgrade --extra-index-url https://download.pytorch.org/whl/cpu/torch_stable.html
+        pip install '.[test]' --upgrade -f https://download.pytorch.org/whl/cpu/torch_stable.html
         pip list
 
     - name: Testing
       # NOTE: do not include coverage report here, see: https://github.com/nedbat/coveragepy/issues/1003
-      run: coverage run --source lightning_gpt -m pytest tests -v --durations=50 --junitxml=results-${{ runner.os }}-py${{ matrix.python-version }}.xml
-
-    - name: Upload pytest results
-      if: failure()
-      uses: actions/upload-artifact@v3
-      with:
-        name: unittest-results-${{ runner.os }}-py${{ matrix.python-version }}-${{ matrix.requires }}-${{ matrix.release }}
-        path: results-${{ runner.os }}-py${{ matrix.python-version }}-${{ matrix.requires }}-${{ matrix.release }}.xml
+      run: coverage run --source lightning_gpt -m pytest tests -v --durations=50
 
     - name: Statistics
       if: success()
