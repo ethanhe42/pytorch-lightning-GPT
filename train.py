@@ -6,7 +6,7 @@ import torch
 from torch.utils.data import DataLoader
 
 from lightning_gpt import callbacks, data, models
-
+from lightning.pytorch.loggers.wandb import WandbLogger
 
 def main(args):
     with urlopen("https://cs.stanford.edu/people/karpathy/char-rnn/shakespeare_input.txt") as f:
@@ -36,22 +36,22 @@ def main(args):
     else:
         raise ValueError(f"Unsupported implementation {args.implementation}")
 
-    if args.strategy == "deepspeed":
-        if GPT_class == models.MinGPT:
-            GPT_class = models.DeepSpeedMinGPT
-        elif GPT_class == models.NanoGPT:
-            GPT_class = models.DeepSpeedNanoGPT
-        else:
-            raise ValueError(f"Implementation {args.implementation} not supported with DeepSpeed")
-        extra_kwargs["offload"] = False
+    # if args.strategy == "deepspeed":
+    #     if GPT_class == models.MinGPT:
+    #         GPT_class = models.DeepSpeedMinGPT
+    #     elif GPT_class == models.NanoGPT:
+    #         GPT_class = models.DeepSpeedNanoGPT
+    #     else:
+    #         raise ValueError(f"Implementation {args.implementation} not supported with DeepSpeed")
+    #     extra_kwargs["offload"] = False
 
-    elif args.strategy == "fsdp_native":
-        if GPT_class == models.MinGPT:
-            GPT_class = models.FSDPMinGPT
-        elif GPT_class == models.NanoGPT:
-            GPT_class = models.FSDPNanoGPT
-        else:
-            raise ValueError(f"Implementation {args.implementation} not supported with FSDP")
+    # elif args.strategy == "fsdp_native":
+    #     if GPT_class == models.MinGPT:
+    #         GPT_class = models.FSDPMinGPT
+    #     elif GPT_class == models.NanoGPT:
+    #         GPT_class = models.FSDPNanoGPT
+    #     else:
+    #         raise ValueError(f"Implementation {args.implementation} not supported with FSDP")
 
     model = GPT_class(
         vocab_size=train_dataset.vocab_size,
@@ -80,14 +80,15 @@ def main(args):
         torch.set_float32_matmul_precision("high")
         callback_list.append(callbacks.CUDAMetricsCallback())
 
-    trainer = L.Trainer.from_argparse_args(
-        args,
+    trainer = L.Trainer(
         max_epochs=10,
         gradient_clip_val=1.0,
         callbacks=callback_list,
         accelerator="auto",
         devices="auto",
-        precision=16,
+        strategy='auto',
+        precision='bf16-mixed',
+        logger=WandbLogger(),
     )
 
     trainer.fit(model, train_loader)
@@ -102,7 +103,7 @@ if __name__ == "__main__":
     L.seed_everything(42)
 
     parser = ArgumentParser()
-    parser = L.Trainer.add_argparse_args(parser)
+    # parser = L.Trainer.add_argparse_args(parser)
 
     parser.add_argument("--model_type", default="gpt2", type=str)
     parser.add_argument("--n_layer", type=int)
@@ -113,7 +114,7 @@ if __name__ == "__main__":
     parser.add_argument("--batch_size", default=64, type=int)
     parser.add_argument("--num_workers", default=4, type=int)
     parser.add_argument("--compile", default=None, choices=[None, "dynamo"])
-    parser.add_argument("--implementation", default="mingpt", choices=["mingpt", "nanogpt"])
+    parser.add_argument("--implementation", default="nanogpt", choices=["mingpt", "nanogpt"])
     args = parser.parse_args()
 
     main(args)
